@@ -1,5 +1,5 @@
 """
-Utility functions for ASR700 Assignment.
+Utility functions for Component A & B.
 Common helper functions used across components.
 """
 
@@ -89,7 +89,11 @@ def create_occupancy_grid(width: int, height: int,
         Log-odds grid (0 = free, 1 = occupied, 0.5 = unknown in probability space)
     """
     # Log-odds: L = log(p / (1-p))
-    log_odds = np.log(default_value / (1 - default_value))
+    # Handle edge case default_value = 0.5 -> log(1) = 0
+    if default_value == 0.5:
+        log_odds = 0.0
+    else:
+        log_odds = np.log(default_value / (1 - default_value))
     return np.full((height, width), log_odds, dtype=np.float32)
 
 
@@ -100,7 +104,7 @@ def log_odds_to_probability(log_odds: np.ndarray) -> np.ndarray:
 
 def probability_to_log_odds(prob: np.ndarray) -> np.ndarray:
     """Convert probability grid to log-odds grid."""
-    # Clamp to avoid log(0)
+    # Clamp to avoid log(0) or division by zero
     prob = np.clip(prob, 1e-6, 1 - 1e-6)
     return np.log(prob / (1 - prob))
 

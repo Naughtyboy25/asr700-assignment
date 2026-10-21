@@ -170,13 +170,19 @@ class RobotControllerA:
         self.lidar = self.robot.getDevice('lidar')
         if self.lidar:
             self.lidar.enable(self.timestep)
-            self.lidar.enablePointCloud()
+            try:
+                self.lidar.enablePointCloud()
+            except Exception:
+                pass
 
         # Camera
         self.camera = self.robot.getDevice('camera')
         if self.camera:
             self.camera.enable(self.timestep)
-            self.camera.recognitionEnable(self.timestep)
+            try:
+                self.camera.recognitionEnable(self.timestep)
+            except Exception:
+                pass  # e-puck camera has no Recognition node
 
         # Motors
         self.left_motor = self.robot.getDevice('left wheel motor')

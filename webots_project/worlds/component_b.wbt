@@ -1,7 +1,9 @@
 #VRML_SIM R2025a utf8
 
+EXTERNPROTO "webots://projects/robots/gctronic/e-puck/protos/E-puck.proto"
+
 WorldInfo {
-  coordinateSystem "NUE"
+  coordinateSystem "ENU"
   contactProperties [
     ContactProperties {
       material1 "default"
@@ -15,41 +17,21 @@ WorldInfo {
     }
   ]
   basicTimeStep 32
-  fast false
-  fastPhysics false
 }
 
 Viewpoint {
-  orientation 1 0 0 -1.5708
-  position 5 15 5
+  orientation -0.5773 0.5773 0.5773 2.0944
+  position -5 5 12
   description "Top View"
 }
 
-Viewpoint {
-  orientation 0 0 1 0
-  position 5 2 10
-  description "Side View"
-}
-
-Viewpoint {
-  orientation 0 1 0 0
-  position 10 2 5
-  description "Front View"
-}
-
-Viewpoint {
-  orientation 0 0 1 0
-  position 5 1.5 5
-  description "Leader View"
-}
-
 Background {
-  skyColor [0.4, 0.6, 0.8]
+  skyColor [0.4 0.6 0.8]
 }
 
 # Floor
 Solid {
-  translation 5 0 5
+  translation 5 5 0
   children [
     Shape {
       appearance Appearance {
@@ -57,26 +39,20 @@ Solid {
           diffuseColor 0.8 0.8 0.8
           ambientIntensity 0.3
         }
-        texture ImageTexture {
-          url ["floor.jpg"]
-        }
       }
       geometry Box {
-        size 10 0.02 10
+        size 10 10 0.02
       }
     }
   ]
   boundingObject Box {
-    size 10 0.02 10
-  }
-  physics Physics {
-    density 0
+    size 10 10 0.02
   }
 }
 
 # Walls
 Solid {
-  translation 5 0.5 0
+  translation 0 5 0.5
   children [
     Shape {
       appearance Appearance {
@@ -85,20 +61,17 @@ Solid {
         }
       }
       geometry Box {
-        size 10 1 0.1
+        size 0.1 10 1
       }
     }
   ]
   boundingObject Box {
-    size 10 1 0.1
-  }
-  physics Physics {
-    density 0
+    size 0.1 10 1
   }
 }
 
 Solid {
-  translation 5 0.5 10
+  translation 10 5 0.5
   children [
     Shape {
       appearance Appearance {
@@ -107,20 +80,17 @@ Solid {
         }
       }
       geometry Box {
-        size 10 1 0.1
+        size 0.1 10 1
       }
     }
   ]
   boundingObject Box {
-    size 10 1 0.1
-  }
-  physics Physics {
-    density 0
+    size 0.1 10 1
   }
 }
 
 Solid {
-  translation 0 0.5 5
+  translation 5 0 0.5
   children [
     Shape {
       appearance Appearance {
@@ -129,20 +99,17 @@ Solid {
         }
       }
       geometry Box {
-        size 0.1 1 10
+        size 10 0.1 1
       }
     }
   ]
   boundingObject Box {
-    size 0.1 1 10
-  }
-  physics Physics {
-    density 0
+    size 10 0.1 1
   }
 }
 
 Solid {
-  translation 10 0.5 5
+  translation 5 10 0.5
   children [
     Shape {
       appearance Appearance {
@@ -151,22 +118,19 @@ Solid {
         }
       }
       geometry Box {
-        size 0.1 1 10
+        size 10 0.1 1
       }
     }
   ]
   boundingObject Box {
-    size 0.1 1 10
-  }
-  physics Physics {
-    density 0
+    size 10 0.1 1
   }
 }
 
 # Obstacles for swarm environment
 # Central obstacle cluster
 Solid {
-  translation 5 0.5 5
+  translation 5 5 0.5
   children [
     Shape {
       appearance Appearance {
@@ -175,12 +139,12 @@ Solid {
         }
       }
       geometry Box {
-        size 2 1 2
+        size 2 2 1
       }
     }
   ]
   boundingObject Box {
-    size 2 1 2
+    size 2 2 1
   }
   physics Physics {
     density 1000
@@ -189,7 +153,7 @@ Solid {
 
 # Corner obstacles
 Solid {
-  translation 2 0.5 2
+  translation 2 2 0.5
   children [
     Shape {
       appearance Appearance {
@@ -213,7 +177,7 @@ Solid {
 }
 
 Solid {
-  translation 8 0.5 2
+  translation 2 8 0.5
   children [
     Shape {
       appearance Appearance {
@@ -237,7 +201,7 @@ Solid {
 }
 
 Solid {
-  translation 2 0.5 8
+  translation 8 2 0.5
   children [
     Shape {
       appearance Appearance {
@@ -261,7 +225,7 @@ Solid {
 }
 
 Solid {
-  translation 8 0.5 8
+  translation 8 8 0.5
   children [
     Shape {
       appearance Appearance {
@@ -286,7 +250,7 @@ Solid {
 
 # Additional scattered obstacles
 Solid {
-  translation 3 0.5 7
+  translation 7 3 0.5
   children [
     Shape {
       appearance Appearance {
@@ -295,12 +259,12 @@ Solid {
         }
       }
       geometry Box {
-        size 0.8 1 0.8
+        size 0.8 0.8 1
       }
     }
   ]
   boundingObject Box {
-    size 0.8 1 0.8
+    size 0.8 0.8 1
   }
   physics Physics {
     density 1000
@@ -308,7 +272,7 @@ Solid {
 }
 
 Solid {
-  translation 7 0.5 3
+  translation 3 7 0.5
   children [
     Shape {
       appearance Appearance {
@@ -317,12 +281,12 @@ Solid {
         }
       }
       geometry Box {
-        size 0.8 1 0.8
+        size 0.8 0.8 1
       }
     }
   ]
   boundingObject Box {
-    size 0.8 1 0.8
+    size 0.8 0.8 1
   }
   physics Physics {
     density 1000
@@ -332,7 +296,7 @@ Solid {
 # Landmarks for visual reference
 # Red
 Solid {
-  translation 1 0.5 1
+  translation 1 1 0.5
   children [
     Shape {
       appearance Appearance {
@@ -358,7 +322,7 @@ Solid {
 
 # Green
 Solid {
-  translation 9 0.5 1
+  translation 1 9 0.5
   children [
     Shape {
       appearance Appearance {
@@ -384,7 +348,7 @@ Solid {
 
 # Blue
 Solid {
-  translation 1 0.5 9
+  translation 9 1 0.5
   children [
     Shape {
       appearance Appearance {
@@ -410,7 +374,7 @@ Solid {
 
 # Yellow
 Solid {
-  translation 9 0.5 9
+  translation 9 9 0.5
   children [
     Shape {
       appearance Appearance {
@@ -435,74 +399,149 @@ Solid {
 }
 
 # LEADER ROBOT (Agent 0)
-Robot {
-  translation 1 0.05 1
-  rotation 0 1 0 0
+E-puck {
+  translation 1 1 0
+  rotation 0 0 1 0
   name "e-puck_leader"
-  controller "leader_controller"
-  supervisor FALSE
-  synchronization TRUE
-  selfCollision FALSE
-  children [
-    # e-puck model
+  controller "swarm_agents"
+  controllerArgs ["leader"]
+  extensionSlot [
+    GPS {
+      name "gps"
+    }
+    InertialUnit {
+      name "inertial unit"
+    }
+    Lidar {
+      translation 0 0 0.03
+      name "lidar"
+      horizontalResolution 360
+      fieldOfView 6.2832
+      numberOfLayers 1
+      minRange 0.05
+      maxRange 3
+    }
+    Emitter {
+      name "emitter"
+      channel 1
+    }
+    Receiver {
+      name "receiver"
+      channel 1
+    }
   ]
 }
 
 # FOLLOWER ROBOTS (Agents 1-3)
-Robot {
-  translation 1 0.05 9
-  rotation 0 1 0 3.14159
+E-puck {
+  translation 9 1 0
+  rotation 0 0 1 3.14159
   name "e-puck_follower_1"
-  controller "follower_controller"
-  supervisor FALSE
-  synchronization TRUE
-  selfCollision FALSE
-  children [
-    # e-puck model
+  controller "swarm_agents"
+  controllerArgs ["follower"]
+  extensionSlot [
+    GPS {
+      name "gps"
+    }
+    InertialUnit {
+      name "inertial unit"
+    }
+    Lidar {
+      translation 0 0 0.03
+      name "lidar"
+      horizontalResolution 360
+      fieldOfView 6.2832
+      numberOfLayers 1
+      minRange 0.05
+      maxRange 3
+    }
+    Emitter {
+      name "emitter"
+      channel 1
+    }
+    Receiver {
+      name "receiver"
+      channel 1
+    }
   ]
 }
 
-Robot {
-  translation 9 0.05 1
-  rotation 0 1 0 1.5708
+E-puck {
+  translation 1 9 0
+  rotation 0 0 1 1.5708
   name "e-puck_follower_2"
-  controller "follower_controller"
-  supervisor FALSE
-  synchronization TRUE
-  selfCollision FALSE
-  children [
-    # e-puck model
+  controller "swarm_agents"
+  controllerArgs ["follower"]
+  extensionSlot [
+    GPS {
+      name "gps"
+    }
+    InertialUnit {
+      name "inertial unit"
+    }
+    Lidar {
+      translation 0 0 0.03
+      name "lidar"
+      horizontalResolution 360
+      fieldOfView 6.2832
+      numberOfLayers 1
+      minRange 0.05
+      maxRange 3
+    }
+    Emitter {
+      name "emitter"
+      channel 1
+    }
+    Receiver {
+      name "receiver"
+      channel 1
+    }
   ]
 }
 
-Robot {
-  translation 9 0.05 9
-  rotation 0 1 0 -1.5708
+E-puck {
+  translation 9 9 0
+  rotation 0 0 1 -1.5708
   name "e-puck_follower_3"
-  controller "follower_controller"
-  supervisor FALSE
-  synchronization TRUE
-  selfCollision FALSE
-  children [
-    # e-puck model
+  controller "swarm_agents"
+  controllerArgs ["follower"]
+  extensionSlot [
+    GPS {
+      name "gps"
+    }
+    InertialUnit {
+      name "inertial unit"
+    }
+    Lidar {
+      translation 0 0 0.03
+      name "lidar"
+      horizontalResolution 360
+      fieldOfView 6.2832
+      numberOfLayers 1
+      minRange 0.05
+      maxRange 3
+    }
+    Emitter {
+      name "emitter"
+      channel 1
+    }
+    Receiver {
+      name "receiver"
+      channel 1
+    }
   ]
 }
 
-# Supervisor for communication monitoring (optional)
-# Supervisor {
-#   controller "swarm_supervisor"
-# }
-
-# Lighting
+# Light
 PointLight {
-  location 5 5 5
+  location 5 5 3
   color 1 1 1
   intensity 1
   radius 20
 }
 
 PointLight {
-  location 5 3 5
+  location 5 5 3
   color 1 1 1
   intensity 0.5
   radius 15
