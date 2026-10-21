@@ -11,7 +11,7 @@ from typing import Tuple
 from python_analysis.utils.config import RobotConfig
 
 
-@dataclass(frozen=True)
+@dataclass
 class RobotState:
     """Robot state representation."""
     x: float = 0.0          # World x position (m)
