@@ -1,5 +1,5 @@
 """
-PID Control System for ASR700 Component A.
+PID Control System for Component A.
 
 Implements PID controllers for differential drive robot path tracking
 with gain tuning and response analysis utilities.

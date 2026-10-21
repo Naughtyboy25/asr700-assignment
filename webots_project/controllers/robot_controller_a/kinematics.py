@@ -1,5 +1,5 @@
 """
-Differential Drive Robot Kinematics for ASR700 Component A.
+Differential Drive Robot Kinematics for Component A.
 
 Implements forward and inverse kinematics for a differential drive robot
 (e-puck compatible).
