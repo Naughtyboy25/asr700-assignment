@@ -1,6 +1,6 @@
 #VRML_SIM R2025a utf8
 
-EXTERNPROTO "webots://projects/robots/gctronic/e-puck/protos/E-puck.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/robots/gctronic/e-puck/protos/E-puck.proto"
 
 WorldInfo {
   coordinateSystem "ENU"
