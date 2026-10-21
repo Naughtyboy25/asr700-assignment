@@ -405,7 +405,7 @@ E-puck {
   name "e-puck_leader"
   controller "swarm_agents"
   controllerArgs ["leader"]
-  extensionSlot [
+  turretSlot [
     GPS {
       name "gps"
     }
@@ -439,7 +439,7 @@ E-puck {
   name "e-puck_follower_1"
   controller "swarm_agents"
   controllerArgs ["follower"]
-  extensionSlot [
+  turretSlot [
     GPS {
       name "gps"
     }
@@ -472,7 +472,7 @@ E-puck {
   name "e-puck_follower_2"
   controller "swarm_agents"
   controllerArgs ["follower"]
-  extensionSlot [
+  turretSlot [
     GPS {
       name "gps"
     }
@@ -505,7 +505,7 @@ E-puck {
   name "e-puck_follower_3"
   controller "swarm_agents"
   controllerArgs ["follower"]
-  extensionSlot [
+  turretSlot [
     GPS {
       name "gps"
     }

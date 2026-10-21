@@ -385,7 +385,7 @@ E-puck {
   rotation 0 0 1 0
   name "e-puck"
   controller "robot_controller_a"
-  extensionSlot [
+  turretSlot [
     GPS {
       name "gps"
     }
