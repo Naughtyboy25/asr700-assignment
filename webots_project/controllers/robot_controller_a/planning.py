@@ -1,5 +1,5 @@
 """
-Motion Planning Algorithms for ASR700 Component A.
+Motion Planning Algorithms for Component A.
 
 Implements Dijkstra's algorithm and A* algorithm for path planning
 on occupancy grids with comparison and visualization utilities.
@@ -598,6 +598,298 @@ def shortcut_path(path: List[Tuple[float, float]],
             break
 
     return path
+
+
+def interpolate_path(path: List[Tuple[float, float]],
+                     step_size: float = 0.1) -> List[Tuple[float, float]]:
+    """
+    Interpolate path to have uniform step size between waypoints.
+
+    Args:
+        path: Path in world coordinates
+        step_size: Desired distance between interpolated points
+
+    Returns:
+        Interpolated path
+    """
+    if len(path) < 2:
+        return path
+
+    interpolated = [path[0]]
+    for i in range(len(path) - 1):
+        p1 = np.array(path[i])
+        p2 = np.array(path[i + 1])
+        dist = np.linalg.norm(p2 - p1)
+        if dist < step_size:
+            continue
+        num_steps = int(dist / step_size)
+        for s in range(1, num_steps + 1):
+            t = s / num_steps
+            interp = p1 + t * (p2 - p1)
+            interpolated.append((float(interp[0]), float(interp[1])))
+
+    # Ensure goal is included
+    if np.linalg.norm(np.array(interpolated[-1]) - np.array(path[-1])) > 1e-6:
+        interpolated.append(path[-1])
+
+    return interpolated
+
+
+def is_path_valid(path: List[Tuple[float, float]],
+                  grid_map: OccupancyGridMap,
+                  check_resolution: float = None) -> bool:
+    """
+    Check if a path is collision-free.
+
+    Args:
+        path: Path in world coordinates
+        grid_map: Occupancy grid map
+        check_resolution: Distance between collision checks (default: grid resolution)
+
+    Returns:
+        True if path is valid (collision-free)
+    """
+    if check_resolution is None:
+        check_resolution = grid_map.resolution
+
+    if len(path) < 2:
+        return True
+
+    for i in range(len(path) - 1):
+        p1 = np.array(path[i])
+        p2 = np.array(path[i + 1])
+        dist = np.linalg.norm(p2 - p1)
+        num_checks = max(2, int(dist / check_resolution) + 1)
+
+        for k in range(num_checks):
+            t = k / (num_checks - 1) if num_checks > 1 else 0
+            sample = p1 + t * (p2 - p1)
+            grid_pos = grid_map.world_to_grid(tuple(sample))
+            if not grid_map.is_free(*grid_pos):
+                return False
+
+    return True
+
+
+def get_path_cells(grid_map: OccupancyGridMap,
+                   path: List[Tuple[float, float]]) -> List[Tuple[int, int]]:
+    """
+    Get grid cells that a path passes through.
+
+    Args:
+        grid_map: Occupancy grid map
+        path: Path in world coordinates
+
+    Returns:
+        List of (row, col) grid cells
+    """
+    cells = []
+    for i in range(len(path) - 1):
+        p1 = path[i]
+        p2 = path[i + 1]
+        r1, c1 = grid_map.world_to_grid(p1)
+        r2, c2 = grid_map.world_to_grid(p2)
+        # Bresenham line
+        cells.extend(bresenham_line(r1, c1, r2, c2))
+    return cells
+
+
+def bresenham_line(r1: int, c1: int, r2: int, c2: int) -> List[Tuple[int, int]]:
+    """Bresenham's line algorithm for grid cells."""
+    cells = []
+    dr = abs(r2 - r1)
+    dc = abs(c2 - c1)
+    sr = 1 if r1 < r2 else -1
+    sc = 1 if c1 < c2 else -1
+    err = dr - dc
+
+    r, c = r1, c1
+    while True:
+        cells.append((r, c))
+        if r == r2 and c == c2:
+            break
+        e2 = 2 * err
+        if e2 > -dc:
+            err -= dc
+            r += sr
+        if e2 < dr:
+            err += dr
+            c += sc
+    return cells
+
+
+def visualize_search(grid_map: OccupancyGridMap,
+                     start: Tuple[int, int],
+                     goal: Tuple[int, int],
+                     open_set: List[Tuple[int, int]] = None,
+                     closed_set: Set[Tuple[int, int]] = None,
+                     path: List[Tuple[int, int]] = None,
+                     save_path: str = None,
+                     show: bool = True):
+    """
+    Visualize search process (explored nodes, open/closed sets, path).
+
+    Args:
+        grid_map: Occupancy grid map
+        start: Start grid position (row, col)
+        goal: Goal grid position (row, col)
+        open_set: Set of open nodes (row, col)
+        closed_set: Set of closed nodes (row, col)
+        path: Final path (row, col)
+        save_path: Optional path to save figure
+        show: Whether to display the plot
+    """
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as patches
+
+    fig, ax = plt.subplots(figsize=(10, 10))
+
+    # Occupancy grid
+    prob_grid = grid_map.grid
+    im = ax.imshow(prob_grid, origin='lower', cmap='RdYlGn_r', vmin=0, vmax=1,
+                   extent=[0, grid_map.width * grid_map.resolution,
+                           0, grid_map.height * grid_map.resolution],
+                   alpha=0.7)
+
+    # Closed set (explored)
+    if closed_set:
+        closed_rows = [c[0] for c in closed_set]
+        closed_cols = [c[1] for c in closed_set]
+        ax.scatter([c * grid_map.resolution + grid_map.resolution/2 for c in closed_cols],
+                   [r * grid_map.resolution + grid_map.resolution/2 for r in closed_rows],
+                   c='gray', s=2, alpha=0.5, label=f'Explored ({len(closed_set)})')
+
+    # Open set (frontier)
+    if open_set:
+        open_rows = [c[0] for c in open_set]
+        open_cols = [c[1] for c in open_set]
+        ax.scatter([c * grid_map.resolution + grid_map.resolution/2 for c in open_cols],
+                   [r * grid_map.resolution + grid_map.resolution/2 for r in open_rows],
+                   c='yellow', s=5, alpha=0.8, label=f'Frontier ({len(open_set)})')
+
+    # Path
+    if path:
+        path_rows = [c[0] for c in path]
+        path_cols = [c[1] for c in path]
+        ax.plot([c * grid_map.resolution + grid_map.resolution/2 for c in path_cols],
+                [r * grid_map.resolution + grid_map.resolution/2 for r in path_rows],
+                'r-', linewidth=3, label=f'Path ({len(path)} steps)')
+
+    # Start/Goal
+    ax.scatter(start[1] * grid_map.resolution + grid_map.resolution/2,
+               start[0] * grid_map.resolution + grid_map.resolution/2,
+               c='green', s=150, marker='o', label='Start', zorder=5)
+    ax.scatter(goal[1] * grid_map.resolution + grid_map.resolution/2,
+               goal[0] * grid_map.resolution + grid_map.resolution/2,
+               c='red', s=150, marker='*', label='Goal', zorder=5)
+
+    ax.set_xlabel('X (m)')
+    ax.set_ylabel('Y (m)')
+    ax.set_title('Search Visualization')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    ax.set_aspect('equal')
+    plt.colorbar(im, ax=ax, label='Occupancy Probability')
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.close()
+
+    return fig
+
+
+def visualize_comparison(grid_map: OccupancyGridMap,
+                         start_world: Tuple[float, float],
+                         goal_world: Tuple[float, float],
+                         save_path: str = None,
+                         show: bool = True):
+    """
+    Visualize Dijkstra vs A* comparison side by side.
+
+    Args:
+        grid_map: Occupancy grid map
+        start_world: Start position (x, y)
+        goal_world: Goal position (x, y)
+        save_path: Optional path to save figure
+        show: Whether to display the plot
+    """
+    import matplotlib.pyplot as plt
+
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+
+    # Run both planners
+    path_d, stats_d = plan_path(grid_map, start_world, goal_world, PlannerType.DIJKSTRA)
+    path_a, stats_a = plan_path(grid_map, start_world, goal_world, PlannerType.ASTAR)
+
+    prob_grid = grid_map.grid
+
+    # Occupancy grid background
+    for ax in axes:
+        im = ax.imshow(prob_grid, origin='lower', cmap='RdYlGn_r', vmin=0, vmax=1,
+                       extent=[0, grid_map.width * grid_map.resolution,
+                               0, grid_map.height * grid_map.resolution],
+                       alpha=0.5)
+
+    # Dijkstra
+    ax = axes[0]
+    if path_d:
+        path_arr = np.array(path_d)
+        ax.plot(path_arr[:, 0], path_arr[:, 1], 'b-', linewidth=3, label=f'Path ({len(path_d)} pts)')
+    ax.scatter(*start_world, c='green', s=100, marker='o', label='Start', zorder=5)
+    ax.scatter(*goal_world, c='red', s=100, marker='*', label='Goal', zorder=5)
+    ax.set_title(f'Dijkstra\nNodes: {stats_d.nodes_explored}, Len: {stats_d.path_length:.2f}m, Time: {stats_d.computation_time_ms:.1f}ms')
+    ax.set_xlabel('X (m)')
+    ax.set_ylabel('Y (m)')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    ax.set_aspect('equal')
+
+    # A*
+    ax = axes[1]
+    if path_a:
+        path_arr = np.array(path_a)
+        ax.plot(path_arr[:, 0], path_arr[:, 1], 'r-', linewidth=3, label=f'Path ({len(path_a)} pts)')
+    ax.scatter(*start_world, c='green', s=100, marker='o', zorder=5)
+    ax.scatter(*goal_world, c='red', s=100, marker='*', zorder=5)
+    ax.set_title(f'A* (Euclidean)\nNodes: {stats_a.nodes_explored}, Len: {stats_a.path_length:.2f}m, Time: {stats_a.computation_time_ms:.1f}ms')
+    ax.set_xlabel('X (m)')
+    ax.set_ylabel('Y (m)')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    ax.set_aspect('equal')
+
+    # Comparison bar chart
+    ax = axes[2]
+    metrics = ['Nodes Explored', 'Path Length (m)', 'Time (ms)']
+    dijkstra_vals = [stats_d.nodes_explored, stats_d.path_length, stats_d.computation_time_ms]
+    astar_vals = [stats_a.nodes_explored, stats_a.path_length, stats_a.computation_time_ms]
+
+    x = np.arange(len(metrics))
+    width = 0.35
+    ax.bar(x - width/2, dijkstra_vals, width, label='Dijkstra', color='skyblue')
+    ax.bar(x + width/2, astar_vals, width, label='A*', color='lightcoral')
+    ax.set_xticks(x)
+    ax.set_xticklabels(metrics)
+    ax.set_ylabel('Value')
+    ax.set_title('Planner Comparison')
+    ax.legend()
+    ax.grid(True, axis='y')
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.close()
+
+    return fig
 
 
 if __name__ == "__main__":
