@@ -51,6 +51,7 @@ class Landmark:
     pixel_position: Tuple[int, int]  # Image coordinates (u, v)
     area: float
     confidence: float
+    timestamp: float = 0.0  # Detection timestamp
 
 
 @dataclass
@@ -70,6 +71,8 @@ class FusedMap:
     grid_resolution: float
     grid_origin: Tuple[float, float]
     landmarks: List[Landmark]
+    obstacles_lidar: List[Tuple[float, float, float]]  # (x, y, radius) from LiDAR
+    obstacles_camera: List[Tuple[float, float, float]]  # (x, y, radius) from camera
     robot_pose: Tuple[float, float, float]
     timestamp: float
 
@@ -157,6 +160,77 @@ class LiDARProcessor:
             grid_origin, self.config.lidar_max_range
         )
 
+    def cluster_points(self, ranges: np.ndarray,
+                       robot_pose: Tuple[float, float, float],
+                       distance_threshold: float = 0.2,
+                       min_points: int = 3) -> List[Dict]:
+        """
+        Cluster LiDAR points into obstacles using Euclidean clustering.
+
+        Args:
+            ranges: Filtered range measurements
+            robot_pose: (x, y, theta) robot pose
+            distance_threshold: Max distance between points in same cluster
+            min_points: Minimum points to form a cluster
+
+        Returns:
+            List of clusters with center, radius, point count
+        """
+        points = self.ranges_to_points(ranges, robot_pose)
+        if len(points) == 0:
+            return []
+
+        clusters = []
+        visited = np.zeros(len(points), dtype=bool)
+
+        for i in range(len(points)):
+            if visited[i]:
+                continue
+
+            # Start new cluster
+            cluster_points = [points[i]]
+            visited[i] = True
+            queue = [i]
+
+            while queue:
+                idx = queue.pop(0)
+                for j in range(len(points)):
+                    if not visited[j]:
+                        dist = np.linalg.norm(points[idx] - points[j])
+                        if dist <= distance_threshold:
+                            visited[j] = True
+                            cluster_points.append(points[j])
+                            queue.append(j)
+
+            if len(cluster_points) >= min_points:
+                cluster_points = np.array(cluster_points)
+                center = np.mean(cluster_points, axis=0)
+                # Radius as max distance from center
+                radii = np.linalg.norm(cluster_points - center, axis=1)
+                radius = np.max(radii)
+
+                clusters.append({
+                    'center': center,
+                    'radius': radius,
+                    'point_count': len(cluster_points),
+                    'points': cluster_points
+                })
+
+        return clusters
+
+    def detect_obstacles_from_clusters(self, ranges: np.ndarray,
+                                        robot_pose: Tuple[float, float, float],
+                                        distance_threshold: float = 0.2,
+                                        min_points: int = 3) -> List[Tuple[float, float, float]]:
+        """
+        Detect obstacles as (x, y, radius) from LiDAR clusters.
+
+        Returns:
+            List of (x, y, radius) in world coordinates
+        """
+        clusters = self.cluster_points(ranges, robot_pose, distance_threshold, min_points)
+        return [(c['center'][0], c['center'][1], c['radius']) for c in clusters]
+
 
 class CameraProcessor:
     """Process camera images for landmark detection."""
@@ -179,7 +253,8 @@ class CameraProcessor:
 
     def detect_landmarks(self, image: np.ndarray,
                          robot_pose: Tuple[float, float, float],
-                         camera_fov: float = 60.0) -> List[Landmark]:
+                         camera_fov: float = 60.0,
+                         timestamp: float = 0.0) -> List[Landmark]:
         """
         Detect colored landmarks in image.
 
@@ -257,7 +332,8 @@ class CameraProcessor:
                     position=(lx, ly),
                     pixel_position=(cx, cy),
                     area=area,
-                    confidence=confidence
+                    confidence=confidence,
+                    timestamp=timestamp
                 )
                 landmarks.append(landmark)
 
@@ -289,6 +365,69 @@ class CameraProcessor:
         edges = cv2.Canny(blurred, low_threshold, high_threshold)
 
         return edges
+
+    def detect_obstacles(self, image: np.ndarray,
+                         robot_pose: Tuple[float, float, float],
+                         depth_image: np.ndarray = None,
+                         camera_fov: float = 60.0) -> List[Tuple[float, float, float]]:
+        """
+        Detect obstacles from camera using edge detection and optional depth.
+
+        Args:
+            image: RGB image
+            robot_pose: (x, y, theta) robot pose
+            depth_image: Optional depth image (H, W) in meters
+            camera_fov: Camera horizontal FOV in degrees
+
+        Returns:
+            List of (x, y, radius) obstacle positions in world coordinates
+        """
+        obstacles = []
+        h, w = image.shape[:2]
+        rx, ry, rtheta = robot_pose
+
+        # Detect edges
+        edges = self.detect_edges(image)
+
+        # Find contours of edge clusters
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            if area < 200:  # Minimum area threshold
+                continue
+
+            # Get bounding box
+            x, y, bw, bh = cv2.boundingRect(contour)
+            cx, cy = x + bw // 2, y + bh // 2
+
+            # Estimate distance
+            if depth_image is not None and 0 <= cy < h and 0 <= cx < w:
+                distance = depth_image[cy, cx]
+                if distance <= 0 or distance > 5.0:
+                    continue
+            else:
+                # Estimate from apparent size (rough approximation)
+                equivalent_diameter = np.sqrt(4 * area / np.pi)
+                focal_length_px = (w / 2) / np.tan(np.deg2rad(camera_fov / 2))
+                distance = (0.2 * focal_length_px) / equivalent_diameter if equivalent_diameter > 0 else 5.0
+                distance = np.clip(distance, 0.3, 5.0)
+
+            # Calculate bearing
+            bearing = (cx - w / 2) / w * np.deg2rad(camera_fov)
+            global_bearing = rtheta + bearing
+
+            # World position
+            ox = rx + distance * np.cos(global_bearing)
+            oy = ry + distance * np.sin(global_bearing)
+
+            # Estimate radius from bounding box
+            radius = max(bw, bh) / w * distance * np.tan(np.deg2rad(camera_fov / 2)) * 2
+            radius = np.clip(radius, 0.1, 1.0)
+
+            obstacles.append((ox, oy, radius))
+
+        return obstacles
 
 
 class SensorFusion:
@@ -345,9 +484,20 @@ class SensorFusion:
             self.occupancy_grid, hits, misses
         )
 
+        # Detect obstacles from LiDAR clusters
+        obstacles_lidar = self.lidar_processor.detect_obstacles_from_clusters(
+            filtered_ranges, robot_pose
+        )
+
         # Process camera
         landmarks = self.camera_processor.detect_landmarks(
-            sensor_data.camera_image, robot_pose
+            sensor_data.camera_image, robot_pose, timestamp=sensor_data.timestamp
+        )
+
+        # Detect obstacles from camera
+        depth_image = getattr(sensor_data, 'depth_image', None)
+        obstacles_camera = self.camera_processor.detect_obstacles(
+            sensor_data.camera_image, robot_pose, depth_image=depth_image
         )
 
         # Update landmark memory
@@ -359,9 +509,14 @@ class SensorFusion:
             grid_resolution=self.grid_resolution,
             grid_origin=self.grid_origin,
             landmarks=list(self.known_landmarks.values()),
+            obstacles_lidar=obstacles_lidar,
+            obstacles_camera=obstacles_camera,
             robot_pose=robot_pose,
             timestamp=sensor_data.timestamp
         )
+
+        # Store for later access
+        self._last_fused_map = fused
 
         return fused
 
@@ -471,6 +626,24 @@ class PerceptionPipeline:
         """Get current landmarks."""
         return self.fusion.known_landmarks.values()
 
+    def get_obstacles_lidar(self) -> List[Tuple[float, float, float]]:
+        """Get obstacles detected from LiDAR."""
+        if hasattr(self.fusion, '_last_fused_map'):
+            return self.fusion._last_fused_map.obstacles_lidar
+        return []
+
+    def get_obstacles_camera(self) -> List[Tuple[float, float, float]]:
+        """Get obstacles detected from camera."""
+        if hasattr(self.fusion, '_last_fused_map'):
+            return self.fusion._last_fused_map.obstacles_camera
+        return []
+
+    def get_all_obstacles(self) -> List[Tuple[float, float, float]]:
+        """Get combined obstacles from both sensors."""
+        lidar_obs = self.get_obstacles_lidar()
+        cam_obs = self.get_obstacles_camera()
+        return lidar_obs + cam_obs
+
     def reset(self):
         """Reset pipeline state."""
         self.fusion.reset()
@@ -516,6 +689,164 @@ def create_occupancy_grid_from_lidar(lidar_ranges: np.ndarray,
     grid = update_occupancy_grid(grid, hits, misses)
 
     return log_odds_to_probability(grid)
+
+
+def visualize_perception(fused_map: FusedMap,
+                          save_path: str = None,
+                          show: bool = True):
+    """
+    Visualize fused perception data.
+
+    Args:
+        fused_map: FusedMap from perception pipeline
+        save_path: Optional path to save figure
+        show: Whether to display the plot
+    """
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as patches
+
+    fig, axes = plt.subplots(1, 2, figsize=(16, 7))
+
+    # Occupancy grid with obstacles
+    ax = axes[0]
+    im = ax.imshow(fused_map.occupancy_grid, origin='lower', cmap='RdYlGn_r',
+                   vmin=0, vmax=1,
+                   extent=[fused_map.grid_origin[0],
+                           fused_map.grid_origin[0] + fused_map.occupancy_grid.shape[1] * fused_map.grid_resolution,
+                           fused_map.grid_origin[1],
+                           fused_map.grid_origin[1] + fused_map.occupancy_grid.shape[0] * fused_map.grid_resolution],
+                   alpha=0.7)
+
+    # Robot position
+    rx, ry, rtheta = fused_map.robot_pose
+    ax.scatter(rx, ry, c='red', s=100, marker='^', label='Robot', zorder=5)
+    # Robot heading
+    arrow_len = 0.5
+    ax.arrow(rx, ry, arrow_len * np.cos(rtheta), arrow_len * np.sin(rtheta),
+             head_width=0.2, head_length=0.1, fc='red', ec='red', zorder=5)
+
+    # LiDAR obstacles
+    for ox, oy, rad in fused_map.obstacles_lidar:
+        circle = plt.Circle((ox, oy), rad, color='blue', fill=True, alpha=0.3, label='LiDAR Obstacle')
+        ax.add_patch(circle)
+
+    # Camera obstacles
+    for ox, oy, rad in fused_map.obstacles_camera:
+        circle = plt.Circle((ox, oy), rad, color='orange', fill=True, alpha=0.3, label='Camera Obstacle')
+        ax.add_patch(circle)
+
+    # Landmarks
+    for lm in fused_map.landmarks:
+        color_map = {'red': 'red', 'green': 'green', 'blue': 'blue', 'yellow': 'gold'}
+        c = color_map.get(lm.color.value, 'black')
+        ax.scatter(lm.position[0], lm.position[1], c=c, s=150, marker='*',
+                   edgecolors='black', linewidth=1, zorder=5, label=f'{lm.color.value} landmark')
+
+    ax.set_xlabel('X (m)')
+    ax.set_ylabel('Y (m)')
+    ax.set_title('Fused Perception: Occupancy Grid + Obstacles + Landmarks')
+    ax.legend(loc='upper right')
+    ax.grid(True, alpha=0.3)
+    ax.set_aspect('equal')
+    plt.colorbar(im, ax=ax, label='Occupancy Probability')
+
+    # Occupancy grid only (clean)
+    ax = axes[1]
+    im = ax.imshow(fused_map.occupancy_grid, origin='lower', cmap='RdYlGn_r',
+                   vmin=0, vmax=1,
+                   extent=[fused_map.grid_origin[0],
+                           fused_map.grid_origin[0] + fused_map.occupancy_grid.shape[1] * fused_map.grid_resolution,
+                           fused_map.grid_origin[1],
+                           fused_map.grid_origin[1] + fused_map.occupancy_grid.shape[0] * fused_map.grid_resolution])
+    ax.scatter(rx, ry, c='red', s=100, marker='^', zorder=5)
+    ax.set_xlabel('X (m)')
+    ax.set_ylabel('Y (m)')
+    ax.set_title('Occupancy Grid (Probability)')
+    ax.grid(True, alpha=0.3)
+    ax.set_aspect('equal')
+    plt.colorbar(im, ax=ax, label='Occupancy Probability')
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.close()
+
+    return fig
+
+
+def visualize_lidar_scan(ranges: np.ndarray,
+                         angles: np.ndarray,
+                         robot_pose: Tuple[float, float, float],
+                         clusters: List[Dict] = None,
+                         save_path: str = None,
+                         show: bool = True):
+    """
+    Visualize LiDAR scan with optional clusters.
+
+    Args:
+        ranges: LiDAR range measurements
+        angles: Corresponding angles
+        robot_pose: (x, y, theta) robot pose
+        clusters: Optional list of clusters from cluster_points()
+        save_path: Optional path to save figure
+        show: Whether to display the plot
+    """
+    import matplotlib.pyplot as plt
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+    rx, ry, rtheta = robot_pose
+
+    # Polar plot
+    ax = axes[0]
+    ax = plt.subplot(121, projection='polar')
+    ax.plot(angles, ranges, 'b-', linewidth=0.5)
+    ax.fill(angles, ranges, alpha=0.2, color='blue')
+    ax.set_title('LiDAR Scan (Polar)')
+    ax.set_theta_zero_location('N')
+    ax.set_theta_direction(-1)
+
+    # Cartesian with clusters
+    ax = axes[1]
+    valid = ranges < 5.0
+    if np.any(valid):
+        xs = rx + ranges[valid] * np.cos(rtheta + angles[valid])
+        ys = ry + ranges[valid] * np.sin(rtheta + angles[valid])
+        ax.scatter(xs, ys, c='blue', s=5, alpha=0.5, label='LiDAR Points')
+
+    ax.scatter(rx, ry, c='red', s=100, marker='^', label='Robot', zorder=5)
+
+    if clusters:
+        for i, cluster in enumerate(clusters):
+            center = cluster['center']
+            radius = cluster['radius']
+            points = cluster['points']
+            ax.scatter(points[:, 0], points[:, 1], s=10, alpha=0.7, label=f'Cluster {i+1}')
+            circle = plt.Circle(center, radius, color='red', fill=False, linewidth=2)
+            ax.add_patch(circle)
+            ax.scatter(center[0], center[1], c='red', s=50, marker='x', zorder=5)
+
+    ax.set_xlabel('X (m)')
+    ax.set_ylabel('Y (m)')
+    ax.set_title('LiDAR Points + Clusters (Cartesian)')
+    ax.legend()
+    ax.grid(True)
+    ax.set_aspect('equal')
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.close()
+
+    return fig
 
 
 if __name__ == "__main__":
