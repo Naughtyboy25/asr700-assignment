@@ -52,6 +52,7 @@ Solid {
 
 # Walls
 Solid {
+  name "wall_north"
   translation 0 5 0.5
   children [
     Shape {
@@ -71,6 +72,7 @@ Solid {
 }
 
 Solid {
+  name "wall_south"
   translation 10 5 0.5
   children [
     Shape {
@@ -90,6 +92,7 @@ Solid {
 }
 
 Solid {
+  name "wall_west"
   translation 5 0 0.5
   children [
     Shape {
@@ -109,6 +112,7 @@ Solid {
 }
 
 Solid {
+  name "wall_east"
   translation 5 10 0.5
   children [
     Shape {
@@ -402,11 +406,11 @@ E-puck {
       maxRange 3
     }
     Emitter {
-      name "emitter"
+      name "emitter_0"
       channel 1
     }
     Receiver {
-      name "receiver"
+      name "receiver_0"
       channel 1
     }
   ]
@@ -418,6 +422,7 @@ PointLight {
   color 1 1 1
   intensity 1
   radius 20
+  attenuation 0 0 1
 }
 
 # Additional ambient lighting
@@ -426,4 +431,5 @@ PointLight {
   color 1 1 1
   intensity 0.5
   radius 15
+  attenuation 0 0 1
 }
