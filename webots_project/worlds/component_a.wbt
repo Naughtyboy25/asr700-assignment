@@ -1,412 +1,266 @@
 #VRML_SIM R2025a utf8
 
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/robots/gctronic/e-puck/protos/E-puck.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/floors/protos/RectangleArena.proto"
 
 WorldInfo {
-  coordinateSystem "ENU"
+  info [
+    "ASR700 Component A - Single Robot Navigation"
+  ]
+  basicTimeStep 32
   contactProperties [
     ContactProperties {
       material1 "default"
       material2 "default"
-      coulombFriction 0.8
-      bounce 0.01
-      bounceVelocity 0.01
-      forceDependentSlip 0
-      softERP 0.2
+      coulombFriction [
+        1
+      ]
+      bounce 0.1
       softCFM 0.0001
     }
   ]
-  basicTimeStep 32
 }
 
 Viewpoint {
-  orientation -0.5773 0.5773 0.5773 2.0944
-  position -5 5 12
-  description "Top View"
+  orientation -0.4 0.4 0.82 1.2
+  position -2 8 10
 }
 
 Background {
-  skyColor [0.4 0.6 0.8]
+  skyColor [0.5 0.7 0.9]
 }
 
 DirectionalLight {
   direction -0.3 -0.5 -1
   intensity 1.2
   ambientIntensity 0.8
-  castShadows FALSE
+  castShadows TRUE
 }
 
-# Floor
+# Clean arena floor + walls
+RectangleArena {
+  translation 0 0 0
+  floorSize 10 10
+  floorTileSize 1 1
+  wallHeight 0.4
+  wallThickness 0.08
+}
+
+# Obstacles (boxes sitting on the floor)
 Solid {
-  name "floor"
-  translation 5 5 0
+  translation -2 0 0.25
+  name "obstacle_1"
   children [
     Shape {
       appearance Appearance {
         material Material {
-          diffuseColor 0.8 0.8 0.8
-          ambientIntensity 0.3
+          diffuseColor 0.35 0.35 0.4
+          roughness 0.8
+          metalness 0
         }
-      }
-      geometry Box {
-        size 10 10 0.02
+        geometry Box {
+          size 1.2 2.5 0.5
+        }
       }
     }
   ]
   boundingObject Box {
-    size 10 10 0.02
+    size 1.2 2.5 0.5
   }
 }
 
-# Walls
 Solid {
-  name "wall_north"
-  translation 0 5 0.5
+  translation 2 -1.5 0.25
+  name "obstacle_2"
   children [
     Shape {
       appearance Appearance {
         material Material {
-          diffuseColor 0.5 0.5 0.5
+          diffuseColor 0.35 0.35 0.4
+          roughness 0.8
+          metalness 0
         }
-      }
-      geometry Box {
-        size 0.1 10 1
+        geometry Box {
+          size 1.5 1.2 0.5
+        }
       }
     }
   ]
   boundingObject Box {
-    size 0.1 10 1
+    size 1.5 1.2 0.5
   }
 }
 
 Solid {
-  name "wall_south"
-  translation 10 5 0.5
+  translation 0 2 0.25
+  name "obstacle_3"
   children [
     Shape {
       appearance Appearance {
         material Material {
-          diffuseColor 0.5 0.5 0.5
+          diffuseColor 0.35 0.35 0.4
+          roughness 0.8
+          metalness 0
         }
-      }
-      geometry Box {
-        size 0.1 10 1
+        geometry Box {
+          size 2.0 1.0 0.5
+        }
       }
     }
   ]
   boundingObject Box {
-    size 0.1 10 1
+    size 2.0 1.0 0.5
   }
 }
 
 Solid {
-  name "wall_west"
-  translation 5 0 0.5
+  translation 2.5 2 0.25
+  name "obstacle_4"
   children [
     Shape {
       appearance Appearance {
         material Material {
-          diffuseColor 0.5 0.5 0.5
+          diffuseColor 0.35 0.35 0.4
+          roughness 0.8
+          metalness 0
         }
-      }
-      geometry Box {
-        size 10 0.1 1
+        geometry Box {
+          size 1.0 1.5 0.5
+        }
       }
     }
   ]
   boundingObject Box {
-    size 10 0.1 1
+    size 1.0 1.5 0.5
   }
 }
 
+# Coloured landmarks for camera detection
 Solid {
-  name "wall_east"
-  translation 5 10 0.5
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.5 0.5 0.5
-        }
-      }
-      geometry Box {
-        size 10 0.1 1
-      }
-    }
-  ]
-  boundingObject Box {
-    size 10 0.1 1
-  }
-}
-
-# Obstacles
-# Obstacle 1 - Left wall area
-Solid {
-  name "obstacle_left"
-  translation 5 3 0.5
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.3 0.3 0.7
-        }
-      }
-      geometry Cylinder {
-        radius 0.5
-        height 1
-      }
-    }
-  ]
-  boundingObject Cylinder {
-    radius 0.5
-    height 1
-  }
-  physics Physics {
-    density 0
-  }
-}
-
-# Obstacle 2 - Right wall area
-Solid {
-  name "obstacle_right"
-  translation 5 7 0.5
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.7 0.3 0.3
-        }
-      }
-      geometry Cylinder {
-        radius 0.5
-        height 1
-      }
-    }
-  ]
-  boundingObject Cylinder {
-    radius 0.5
-    height 1
-  }
-  physics Physics {
-    density 0
-  }
-}
-
-# Obstacle 3 - Center front
-Solid {
-  name "obstacle_center_front"
-  translation 3 5 0.5
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.3 0.7 0.3
-        }
-      }
-      geometry Box {
-        size 1 1 1
-      }
-    }
-  ]
-  boundingObject Box {
-    size 1 1 1
-  }
-  physics Physics {
-    density 0
-  }
-}
-
-# Obstacle 4 - Center back
-Solid {
-  name "obstacle_center_back"
-  translation 7 5 0.5
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.7 0.7 0.3
-        }
-      }
-      geometry Box {
-        size 1 1 1
-      }
-    }
-  ]
-  boundingObject Box {
-    size 1 1 1
-  }
-  physics Physics {
-    density 0
-  }
-}
-
-# Obstacle 5 - Front-left
-Solid {
-  name "obstacle_front_left"
-  translation 4 4 0.5
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.7 0.3 0.7
-        }
-      }
-      geometry Cylinder {
-        radius 0.3
-        height 1
-      }
-    }
-  ]
-  boundingObject Cylinder {
-    radius 0.3
-    height 1
-  }
-  physics Physics {
-    density 0
-  }
-}
-
-# Obstacle 6 - Front-right
-Solid {
-  name "obstacle_front_right"
-  translation 4 6 0.5
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.3 0.7 0.7
-        }
-      }
-      geometry Cylinder {
-        radius 0.3
-        height 1
-      }
-    }
-  ]
-  boundingObject Cylinder {
-    radius 0.3
-    height 1
-  }
-  physics Physics {
-    density 0
-  }
-}
-
-# Landmarks (colored cylinders for camera detection)
-# Red landmark
-Solid {
+  translation -3.5 -3.5 0.15
   name "landmark_red"
-  translation 2 2 0.5
   children [
     Shape {
       appearance Appearance {
         material Material {
-          diffuseColor 1 0 0
-          emissiveColor 1 0 0
+          diffuseColor 0.9 0.1 0.1
+          roughness 0.5
+          metalness 0
         }
-      }
-      geometry Cylinder {
-        radius 0.15
-        height 0.5
+        geometry Cylinder {
+          height 0.3
+          radius 0.12
+        }
       }
     }
   ]
   boundingObject Cylinder {
-    radius 0.15
-    height 0.5
-  }
-  physics Physics {
-    density 100
+    height 0.3
+    radius 0.12
   }
 }
 
-# Green landmark
 Solid {
+  translation -3.5 3.5 0.15
   name "landmark_green"
-  translation 2 8 0.5
   children [
     Shape {
       appearance Appearance {
         material Material {
-          diffuseColor 0 1 0
-          emissiveColor 0 1 0
+          diffuseColor 0.1 0.8 0.2
+          roughness 0.5
+          metalness 0
         }
-      }
-      geometry Cylinder {
-        radius 0.15
-        height 0.5
+        geometry Cylinder {
+          height 0.3
+          radius 0.12
+        }
       }
     }
   ]
   boundingObject Cylinder {
-    radius 0.15
-    height 0.5
-  }
-  physics Physics {
-    density 100
+    height 0.3
+    radius 0.12
   }
 }
 
-# Blue landmark
 Solid {
+  translation 3.5 -3.5 0.15
   name "landmark_blue"
-  translation 8 2 0.5
   children [
     Shape {
       appearance Appearance {
         material Material {
-          diffuseColor 0 0 1
-          emissiveColor 0 0 1
+          diffuseColor 0.1 0.3 0.9
+          roughness 0.5
+          metalness 0
         }
-      }
-      geometry Cylinder {
-        radius 0.15
-        height 0.5
+        geometry Cylinder {
+          height 0.3
+          radius 0.12
+        }
       }
     }
   ]
   boundingObject Cylinder {
-    radius 0.15
-    height 0.5
-  }
-  physics Physics {
-    density 100
+    height 0.3
+    radius 0.12
   }
 }
 
-# Yellow landmark
 Solid {
+  translation 3.5 3.5 0.15
   name "landmark_yellow"
-  translation 8 8 0.5
   children [
     Shape {
       appearance Appearance {
         material Material {
-          diffuseColor 1 1 0
-          emissiveColor 1 1 0
+          diffuseColor 0.95 0.85 0.1
+          roughness 0.5
+          metalness 0
         }
-      }
-      geometry Cylinder {
-        radius 0.15
-        height 0.5
+        geometry Cylinder {
+          height 0.3
+          radius 0.12
+        }
       }
     }
   ]
   boundingObject Cylinder {
-    radius 0.15
-    height 0.5
-  }
-  physics Physics {
-    density 100
+    height 0.3
+    radius 0.12
   }
 }
 
-# Robot (e-puck)
+# Goal marker (visual only)
+Solid {
+  translation 3.5 3.5 0.01
+  name "goal_marker"
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 0.1 0.9 0.3
+          roughness 1
+          metalness 0
+          transparency 0.4
+        }
+        geometry Cylinder {
+          height 0.02
+          radius 0.25
+        }
+      }
+    }
+  ]
+}
+
+# E-puck robot – start near bottom-left of arena
 E-puck {
-  translation 1 1 0
-  rotation 0 0 1 0
+  translation -3.5 -3.5 0
+  rotation 0 0 1 0.785
   name "e-puck"
   controller "robot_controller_a"
+  supervisor FALSE
   turretSlot [
     GPS {
       name "gps"
@@ -415,21 +269,14 @@ E-puck {
       name "inertial unit"
     }
     Lidar {
-      translation 0 0 0.03
+      translation 0 0 0.04
       name "lidar"
-      horizontalResolution 360
-      fieldOfView 6.2832
+      horizontalResolution 180
+      fieldOfView 6.28318
       numberOfLayers 1
       minRange 0.05
-      maxRange 3
-    }
-    Emitter {
-      name "emitter_0"
-      channel 1
-    }
-    Receiver {
-      name "receiver_0"
-      channel 1
+      maxRange 2.5
+      type "fixed"
     }
   ]
 }
@@ -439,7 +286,7 @@ DirectionalLight {
   direction -0.3 -0.5 -1
   intensity 1.2
   ambientIntensity 0.8
-  castShadows FALSE
+  castShadows TRUE
 }
 
 PointLight {

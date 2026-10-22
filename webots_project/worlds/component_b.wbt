@@ -1,433 +1,210 @@
 #VRML_SIM R2025a utf8
 
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/robots/gctronic/e-puck/protos/E-puck.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/floors/protos/RectangleArena.proto"
 
 WorldInfo {
-  coordinateSystem "ENU"
+  info [
+    "ASR700 Component B - Multi-Agent Swarm"
+  ]
+  basicTimeStep 32
   contactProperties [
     ContactProperties {
       material1 "default"
       material2 "default"
-      coulombFriction 0.8
-      bounce 0.01
-      bounceVelocity 0.01
-      forceDependentSlip 0
-      softERP 0.2
+      coulombFriction [
+        1
+      ]
+      bounce 0.1
       softCFM 0.0001
     }
   ]
-  basicTimeStep 32
 }
 
 Viewpoint {
-  orientation -0.5773 0.5773 0.5773 2.0944
-  position -5 5 12
-  description "Top View"
+  orientation -0.4 0.4 0.82 1.2
+  position -2 8 10
 }
 
 Background {
-  skyColor [0.4 0.6 0.8]
+  skyColor [0.5 0.7 0.9]
 }
 
 DirectionalLight {
-  direction -0.3 -0.5 -1
-  intensity 1.2
-  ambientIntensity 0.8
-  castShadows FALSE
+  ambientIntensity 0.6
+  direction 0.3 -0.6 -1
+  intensity 1.0
+  castShadows TRUE
 }
 
-# Floor
-Solid {
-  name "floor"
-  translation 5 5 0
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.8 0.8 0.8
-          ambientIntensity 0.3
-        }
-      }
-      geometry Box {
-        size 10 10 0.02
-      }
-    }
-  ]
-  boundingObject Box {
-    size 10 10 0.02
-  }
+RectangleArena {
+  translation 0 0 0
+  floorSize 10 10
+  floorTileSize 1 1
+  wallHeight 0.4
+  wallThickness 0.08
 }
 
-# Walls
+# Central obstacle
 Solid {
-  name "wall_north"
-  translation 0 5 0.5
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.5 0.5 0.5
-        }
-      }
-      geometry Box {
-        size 0.1 10 1
-      }
-    }
-  ]
-  boundingObject Box {
-    size 0.1 10 1
-  }
-}
-
-Solid {
-  name "wall_south"
-  translation 10 5 0.5
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.5 0.5 0.5
-        }
-      }
-      geometry Box {
-        size 0.1 10 1
-      }
-    }
-  ]
-  boundingObject Box {
-    size 0.1 10 1
-  }
-}
-
-Solid {
-  name "wall_west"
-  translation 5 0 0.5
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.5 0.5 0.5
-        }
-      }
-      geometry Box {
-        size 10 0.1 1
-      }
-    }
-  ]
-  boundingObject Box {
-    size 10 0.1 1
-  }
-}
-
-Solid {
-  name "wall_east"
-  translation 5 10 0.5
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.5 0.5 0.5
-        }
-      }
-      geometry Box {
-        size 10 0.1 1
-      }
-    }
-  ]
-  boundingObject Box {
-    size 10 0.1 1
-  }
-}
-
-# Obstacles for swarm environment
-# Central obstacle cluster
-Solid {
+  translation 0 0 0.25
   name "obstacle_center"
-  translation 5 5 0.5
   children [
     Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.4 0.4 0.4
-        }
+      appearance PBRAppearance {
+        baseColor 0.35 0.35 0.4
+        roughness 0.8
+        metalness 0
       }
       geometry Box {
-        size 2 2 1
+        size 1.5 1.5 0.5
       }
     }
   ]
   boundingObject Box {
-    size 2 2 1
-  }
-  physics Physics {
-    density 0
+    size 1.5 1.5 0.5
   }
 }
 
 # Corner obstacles
 Solid {
-  name "obstacle_corner_1"
-  translation 2 2 0.5
+  translation -2.5 -2.5 0.2
+  name "obstacle_sw"
   children [
     Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.6 0.3 0.3
-        }
-      }
-      geometry Cylinder {
-        radius 0.5
-        height 1
-      }
-    }
-  ]
-  boundingObject Cylinder {
-    radius 0.5
-    height 1
-  }
-  physics Physics {
-    density 0
-  }
-}
-
-Solid {
-  name "obstacle_corner_2"
-  translation 2 8 0.5
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.3 0.6 0.3
-        }
-      }
-      geometry Cylinder {
-        radius 0.5
-        height 1
-      }
-    }
-  ]
-  boundingObject Cylinder {
-    radius 0.5
-    height 1
-  }
-  physics Physics {
-    density 0
-  }
-}
-
-Solid {
-  name "obstacle_corner_3"
-  translation 8 2 0.5
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.3 0.3 0.6
-        }
-      }
-      geometry Cylinder {
-        radius 0.5
-        height 1
-      }
-    }
-  ]
-  boundingObject Cylinder {
-    radius 0.5
-    height 1
-  }
-  physics Physics {
-    density 0
-  }
-}
-
-Solid {
-  name "obstacle_corner_4"
-  translation 8 8 0.5
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.6 0.6 0.3
-        }
-      }
-      geometry Cylinder {
-        radius 0.5
-        height 1
-      }
-    }
-  ]
-  boundingObject Cylinder {
-    radius 0.5
-    height 1
-  }
-  physics Physics {
-    density 0
-  }
-}
-
-# Additional scattered obstacles
-Solid {
-  name "obstacle_scatter_1"
-  translation 7 3 0.5
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.5 0.5 0.7
-        }
+      appearance PBRAppearance {
+        baseColor 0.4 0.35 0.35
+        roughness 0.8
+        metalness 0
       }
       geometry Box {
-        size 0.8 0.8 1
+        size 1.0 1.0 0.4
       }
     }
   ]
   boundingObject Box {
-    size 0.8 0.8 1
-  }
-  physics Physics {
-    density 0
+    size 1.0 1.0 0.4
   }
 }
 
 Solid {
-  name "obstacle_scatter_2"
-  translation 3 7 0.5
+  translation 2.5 2.5 0.2
+  name "obstacle_ne"
   children [
     Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0.7 0.5 0.5
-        }
+      appearance PBRAppearance {
+        baseColor 0.4 0.35 0.35
+        roughness 0.8
+        metalness 0
       }
       geometry Box {
-        size 0.8 0.8 1
+        size 1.0 1.0 0.4
       }
     }
   ]
   boundingObject Box {
-    size 0.8 0.8 1
-  }
-  physics Physics {
-    density 0
+    size 1.0 1.0 0.4
   }
 }
 
-# Landmarks for visual reference
-# Red
+# Coverage targets (visual cylinders)
 Solid {
-  name "landmark_red"
-  translation 1 1 0.5
+  translation -3 2 0.1
+  name "target_1"
   children [
     Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 1 0 0
-          emissiveColor 1 0 0
-        }
+      appearance PBRAppearance {
+        baseColor 0.9 0.2 0.2
+        roughness 0.5
+        metalness 0
       }
       geometry Cylinder {
+        height 0.2
         radius 0.15
-        height 0.5
       }
     }
   ]
   boundingObject Cylinder {
+    height 0.2
     radius 0.15
-    height 0.5
-  }
-  physics Physics {
-    density 100
   }
 }
 
-# Green
 Solid {
-  name "landmark_green"
-  translation 1 9 0.5
+  translation 3 -2 0.1
+  name "target_2"
   children [
     Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0 1 0
-          emissiveColor 0 1 0
-        }
+      appearance PBRAppearance {
+        baseColor 0.2 0.8 0.3
+        roughness 0.5
+        metalness 0
       }
       geometry Cylinder {
+        height 0.2
         radius 0.15
-        height 0.5
       }
     }
   ]
   boundingObject Cylinder {
+    height 0.2
     radius 0.15
-    height 0.5
-  }
-  physics Physics {
-    density 100
   }
 }
 
-# Blue
 Solid {
-  name "landmark_blue"
-  translation 9 1 0.5
+  translation 2 3 0.1
+  name "target_3"
   children [
     Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0 0 1
-          emissiveColor 0 0 1
-        }
+      appearance PBRAppearance {
+        baseColor 0.2 0.4 0.9
+        roughness 0.5
+        metalness 0
       }
       geometry Cylinder {
+        height 0.2
         radius 0.15
-        height 0.5
       }
     }
   ]
   boundingObject Cylinder {
+    height 0.2
     radius 0.15
-    height 0.5
-  }
-  physics Physics {
-    density 100
   }
 }
 
-# Yellow
 Solid {
-  name "landmark_yellow"
-  translation 9 9 0.5
+  translation -2 -3 0.1
+  name "target_4"
   children [
     Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 1 1 0
-          emissiveColor 1 1 0
-        }
+      appearance PBRAppearance {
+        baseColor 0.95 0.8 0.1
+        roughness 0.5
+        metalness 0
       }
       geometry Cylinder {
+        height 0.2
         radius 0.15
-        height 0.5
       }
     }
   ]
   boundingObject Cylinder {
+    height 0.2
     radius 0.15
-    height 0.5
-  }
-  physics Physics {
-    density 100
   }
 }
 
-# LEADER ROBOT (Agent 0)
+# ---- LEADER ----
 E-puck {
-  translation 1 1 0
-  rotation 0 0 1 0
+  translation -3.5 -1.5 0
+  rotation 0 0 1 0.5
   name "e-puck_leader"
   controller "swarm_agents"
-  controllerArgs ["leader"]
+  controllerArgs [
+    "leader"
+  ]
   turretSlot [
     GPS {
       name "gps"
@@ -436,20 +213,20 @@ E-puck {
       name "inertial unit"
     }
     Lidar {
-      translation 0 0 0.03
+      translation 0 0 0.04
       name "lidar"
-      horizontalResolution 360
-      fieldOfView 6.2832
+      horizontalResolution 120
+      fieldOfView 6.28318
       numberOfLayers 1
       minRange 0.05
-      maxRange 3
+      maxRange 2.0
     }
     Emitter {
-      name "emitter_0"
+      name "emitter"
       channel 1
     }
     Receiver {
-      name "receiver_0"
+      name "receiver"
       channel 1
     }
   ]
@@ -457,11 +234,13 @@ E-puck {
 
 # FOLLOWER ROBOTS (Agents 1-3)
 E-puck {
-  translation 9 1 0
+  translation -3.5 0 0
   rotation 0 0 1 3.14159
   name "e-puck_follower_1"
   controller "swarm_agents"
-  controllerArgs ["follower"]
+  controllerArgs [
+    "follower"
+  ]
   turretSlot [
     GPS {
       name "gps"
@@ -470,31 +249,33 @@ E-puck {
       name "inertial unit"
     }
     Lidar {
-      translation 0 0 0.03
+      translation 0 0 0.04
       name "lidar"
-      horizontalResolution 360
-      fieldOfView 6.2832
+      horizontalResolution 120
+      fieldOfView 6.28318
       numberOfLayers 1
       minRange 0.05
-      maxRange 3
+      maxRange 2.0
     }
     Emitter {
-      name "emitter_1"
+      name "emitter"
       channel 1
     }
     Receiver {
-      name "receiver_1"
+      name "receiver"
       channel 1
     }
   ]
 }
 
 E-puck {
-  translation 1 9 0
-  rotation 0 0 1 1.5708
+  translation -2.5 -1.5 0
+  rotation 0 0 1 1.0
   name "e-puck_follower_2"
   controller "swarm_agents"
-  controllerArgs ["follower"]
+  controllerArgs [
+    "follower"
+  ]
   turretSlot [
     GPS {
       name "gps"
@@ -503,31 +284,33 @@ E-puck {
       name "inertial unit"
     }
     Lidar {
-      translation 0 0 0.03
+      translation 0 0 0.04
       name "lidar"
-      horizontalResolution 360
-      fieldOfView 6.2832
+      horizontalResolution 120
+      fieldOfView 6.28318
       numberOfLayers 1
       minRange 0.05
-      maxRange 3
+      maxRange 2.0
     }
     Emitter {
-      name "emitter_2"
+      name "emitter"
       channel 1
     }
     Receiver {
-      name "receiver_2"
+      name "receiver"
       channel 1
     }
   ]
 }
 
 E-puck {
-  translation 9 9 0
-  rotation 0 0 1 -1.5708
+  translation -2.5 0.5 0
+  rotation 0 0 1 -0.5
   name "e-puck_follower_3"
   controller "swarm_agents"
-  controllerArgs ["follower"]
+  controllerArgs [
+    "follower"
+  ]
   turretSlot [
     GPS {
       name "gps"
@@ -536,20 +319,20 @@ E-puck {
       name "inertial unit"
     }
     Lidar {
-      translation 0 0 0.03
+      translation 0 0 0.04
       name "lidar"
-      horizontalResolution 360
-      fieldOfView 6.2832
+      horizontalResolution 120
+      fieldOfView 6.28318
       numberOfLayers 1
       minRange 0.05
-      maxRange 3
+      maxRange 2.0
     }
     Emitter {
-      name "emitter_3"
+      name "emitter"
       channel 1
     }
     Receiver {
-      name "receiver_3"
+      name "receiver"
       channel 1
     }
   ]
