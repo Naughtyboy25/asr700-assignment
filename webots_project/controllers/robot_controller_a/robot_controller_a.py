@@ -248,10 +248,10 @@ class RobotControllerA:
 
     def _check_collision(self, ds_values: List[float]) -> bool:
         """Check for imminent collision using distance sensors."""
-        # Webots distance sensors return values ~0-1000, lower = closer
-        # Threshold depends on sensor calibration
+        # Webots e-puck proximity sensors: higher values = closer (range ~0-4000)
+        # Threshold for ~3cm detection: ~2000 (max range ~5cm at ~4000)
         for val in ds_values:
-            if val < 100:  # Adjust threshold based on sensor calibration
+            if val > 2000:  # High threshold for imminent collision only
                 return True
         return False
 
@@ -329,10 +329,10 @@ class RobotControllerA:
 
     def _check_collision(self, ds_values: List[float]) -> bool:
         """Check for imminent collision using distance sensors."""
-        # Webots distance sensors return values ~0-1000, lower = closer
-        # Threshold depends on sensor calibration
+        # Webots e-puck proximity sensors: higher values = closer (range ~0-4000)
+        # Threshold for ~3cm detection: ~2000 (max range ~5cm at ~4000)
         for val in ds_values:
-            if val < 100:  # Adjust threshold based on sensor calibration
+            if val > 2000:  # High threshold for imminent collision only
                 return True
         return False
 
