@@ -75,8 +75,9 @@ class FollowerController:
     """
 
     def __init__(self, agent_id: int = 1):
-        self.robot = Robot()
-        self.timestep = int(self.robot.getBasicTimeStep())
+        # Don't create Robot here - defer to main()
+        self.robot = None
+        self.timestep = 32
 
         # Configuration
         self.sensor_config = SensorConfig()
@@ -86,9 +87,6 @@ class FollowerController:
 
         # Agent identity
         self.agent_id = agent_id
-
-        # Devices
-        self._init_devices()
 
         # State
         self.position = np.array([0.0, 0.0])
@@ -114,45 +112,13 @@ class FollowerController:
         self.start_time = time.time()
         self.last_time = self.start_time
 
-    def _init_devices(self):
-        """Initialize Webots devices."""
-        # Sensors
-        self.lidar = self.robot.getDevice('lidar')
-        if self.lidar:
-            self.lidar.enable(self.timestep)
+    def _init(self):
+        """Initialize Robot and devices (called from main)."""
+        self.robot = Robot()
+        self.timestep = int(self.robot.getBasicTimeStep())
 
-        self.camera = self.robot.getDevice('camera')
-        if self.camera:
-            self.camera.enable(self.timestep)
-
-        # Motors
-        self.left_motor = self.robot.getDevice('left wheel motor')
-        self.right_motor = self.robot.getDevice('right wheel motor')
-        if self.left_motor and self.right_motor:
-            self.left_motor.setPosition(float('inf'))
-            self.right_motor.setPosition(float('inf'))
-
-        # Localization
-        self.gps = self.robot.getDevice('gps')
-        if self.gps:
-            self.gps.enable(self.timestep)
-
-        self.imu = self.robot.getDevice('inertial unit')
-        if self.imu:
-            self.imu.enable(self.timestep)
-
-        # Communication
-        self.emitter = self.robot.getDevice('emitter')
-        if self.emitter:
-            self.emitter.setChannel(1)
-            self.emitter.setRange(self.swarm_config.communication_range)
-
-        self.receiver = self.robot.getDevice('receiver')
-        if self.receiver:
-            self.receiver.enable(self.timestep)
-            self.receiver.setChannel(1)
-
-        print(f"Follower {self.agent_id} devices initialized")
+        # Devices
+        self._init_devices()
 
     def _read_sensors(self) -> Tuple[np.ndarray, np.ndarray, Tuple[float, float, float]]:
         """Read sensor data."""
@@ -376,8 +342,10 @@ class FollowerController:
 def main():
     # Get agent ID from robot name or environment
     # In Webots, each robot instance has a unique name
-    robot = Robot()
-    robot_name = robot.getName()
+    # We need to create a temporary Robot to get the name
+    temp_robot = Robot()
+    robot_name = temp_robot.getName()
+    del temp_robot  # Clean up temporary instance
 
     # Parse agent ID from name (e.g., "e-puck_follower_1" -> 1)
     agent_id = 1
@@ -388,6 +356,7 @@ def main():
             agent_id = 1
 
     controller = FollowerController(agent_id)
+    controller._init()
     controller.run()
 
 

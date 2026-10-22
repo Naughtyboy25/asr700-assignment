@@ -80,17 +80,15 @@ class LeaderController:
     """
 
     def __init__(self):
-        self.robot = Robot()
-        self.timestep = int(self.robot.getBasicTimeStep())
+        # Don't create Robot here - defer to main()
+        self.robot = None
+        self.timestep = 32
 
         # Configuration
         self.sensor_config = SensorConfig()
         self.env_config = EnvironmentConfig()
         self.robot_config = RobotConfig()
         self.swarm_config = SwarmConfig()
-
-        # Devices
-        self._init_devices()
 
         # State
         self.agent_id = 0  # Leader is agent 0
@@ -123,6 +121,14 @@ class LeaderController:
         self.consensus_history = []
         self.start_time = time.time()
         self.last_time = self.start_time
+
+    def _init(self):
+        """Initialize Robot and devices (called from main)."""
+        self.robot = Robot()
+        self.timestep = int(self.robot.getBasicTimeStep())
+
+        # Devices
+        self._init_devices()
 
     def _init_devices(self):
         """Initialize Webots devices."""
@@ -292,10 +298,13 @@ class LeaderController:
 
         # Optimize waypoints for followers
         num_waypoints = self.num_followers * 2  # 2 waypoints per follower
-        bounds = (np.array([0.5, 0.5]), np.array([9.5, 9.5]))
+        # Bounds for each waypoint (x, y), replicated for all waypoints
+        lower = np.tile([0.5, 0.5], num_waypoints)
+        upper = np.tile([9.5, 9.5], num_waypoints)
+        bounds = (lower, upper)
 
         self.pso.bounds = bounds
-        result = self.pso.optimize(coverage_fitness, dim=num_waypoints, verbose=False)
+        result = self.pso.optimize(coverage_fitness, dim=num_waypoints * 2, verbose=False)
 
         # Extract waypoints
         waypoints = result.best_position.reshape(-1, 2)
@@ -396,6 +405,7 @@ class LeaderController:
 
 def main():
     controller = LeaderController()
+    controller._init()
     controller.run()
 
 
