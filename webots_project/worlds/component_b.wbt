@@ -29,8 +29,16 @@ Background {
   skyColor [0.4 0.6 0.8]
 }
 
+DirectionalLight {
+  direction -0.3 -0.5 -1
+  intensity 1.2
+  ambientIntensity 0.8
+  castShadows FALSE
+}
+
 # Floor
 Solid {
+  name "floor"
   translation 5 5 0
   children [
     Shape {
@@ -134,6 +142,7 @@ Solid {
 # Obstacles for swarm environment
 # Central obstacle cluster
 Solid {
+  name "obstacle_center"
   translation 5 5 0.5
   children [
     Shape {
@@ -157,6 +166,7 @@ Solid {
 
 # Corner obstacles
 Solid {
+  name "obstacle_corner_1"
   translation 2 2 0.5
   children [
     Shape {
@@ -181,6 +191,7 @@ Solid {
 }
 
 Solid {
+  name "obstacle_corner_2"
   translation 2 8 0.5
   children [
     Shape {
@@ -205,6 +216,7 @@ Solid {
 }
 
 Solid {
+  name "obstacle_corner_3"
   translation 8 2 0.5
   children [
     Shape {
@@ -229,6 +241,7 @@ Solid {
 }
 
 Solid {
+  name "obstacle_corner_4"
   translation 8 8 0.5
   children [
     Shape {
@@ -254,6 +267,7 @@ Solid {
 
 # Additional scattered obstacles
 Solid {
+  name "obstacle_scatter_1"
   translation 7 3 0.5
   children [
     Shape {
@@ -276,6 +290,7 @@ Solid {
 }
 
 Solid {
+  name "obstacle_scatter_2"
   translation 3 7 0.5
   children [
     Shape {
@@ -300,6 +315,7 @@ Solid {
 # Landmarks for visual reference
 # Red
 Solid {
+  name "landmark_red"
   translation 1 1 0.5
   children [
     Shape {
@@ -326,6 +342,7 @@ Solid {
 
 # Green
 Solid {
+  name "landmark_green"
   translation 1 9 0.5
   children [
     Shape {
@@ -352,6 +369,7 @@ Solid {
 
 # Blue
 Solid {
+  name "landmark_blue"
   translation 9 1 0.5
   children [
     Shape {
@@ -378,6 +396,7 @@ Solid {
 
 # Yellow
 Solid {
+  name "landmark_yellow"
   translation 9 9 0.5
   children [
     Shape {
@@ -536,14 +555,26 @@ E-puck {
   ]
 }
 
-# Light
+# Supervisor for communication monitoring (optional)
+# Supervisor {
+#   controller "swarm_supervisor"
+# }
+
+# Lighting
+DirectionalLight {
+  direction -0.3 -0.5 -1
+  intensity 1.2
+  ambientIntensity 0.8
+  castShadows FALSE
+}
+
 PointLight {
   location 5 5 3
   color 1 1 1
   intensity 1
   radius 20
-}
   attenuation 0 0 1
+}
 
 PointLight {
   location 5 5 3
