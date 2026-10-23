@@ -114,11 +114,52 @@ class FollowerController:
 
     def _init(self):
         """Initialize Robot and devices (called from main)."""
-        self.robot = Robot()
+        if self.robot is None:
+            self.robot = Robot()
         self.timestep = int(self.robot.getBasicTimeStep())
 
         # Devices
         self._init_devices()
+
+    def _init_devices(self):
+        """Initialize Webots devices."""
+        # Sensors
+        self.lidar = self.robot.getDevice('lidar')
+        if self.lidar:
+            self.lidar.enable(self.timestep)
+
+        self.camera = self.robot.getDevice('camera')
+        if self.camera:
+            self.camera.enable(self.timestep)
+
+        # Motors
+        self.left_motor = self.robot.getDevice('left wheel motor')
+        self.right_motor = self.robot.getDevice('right wheel motor')
+        if self.left_motor and self.right_motor:
+            self.left_motor.setPosition(float('inf'))
+            self.right_motor.setPosition(float('inf'))
+
+        # Localization
+        self.gps = self.robot.getDevice('gps')
+        if self.gps:
+            self.gps.enable(self.timestep)
+
+        self.imu = self.robot.getDevice('inertial unit')
+        if self.imu:
+            self.imu.enable(self.timestep)
+
+        # Communication
+        self.emitter = self.robot.getDevice('emitter')
+        if self.emitter:
+            self.emitter.setChannel(1)
+            self.emitter.setRange(self.swarm_config.communication_range)
+
+        self.receiver = self.robot.getDevice('receiver')
+        if self.receiver:
+            self.receiver.enable(self.timestep)
+            self.receiver.setChannel(1)
+
+        print(f"Follower {self.agent_id} devices initialized")
 
     def _read_sensors(self) -> Tuple[np.ndarray, np.ndarray, Tuple[float, float, float]]:
         """Read sensor data."""
@@ -196,11 +237,10 @@ class FollowerController:
         # Current target (from consensus or assigned)
         target_val = self.target if self.target is not None else self.position
 
-        msg = np.array([self.agent_id,
-                        self.position[0], self.position[1], self.heading,
-                        target_val[0], target_val[1]],
-                       dtype=np.float32)
-        self.emitter.send(msg.tobytes())
+        msg = [self.agent_id,
+               self.position[0], self.position[1], self.heading,
+               target_val[0], target_val[1]]
+        self.emitter.send(",".join(f"{v:.6f}" for v in msg))
 
     def _receive_messages(self):
         """Receive messages from leader and other followers."""
@@ -208,15 +248,19 @@ class FollowerController:
             return
 
         while self.receiver.getQueueLength() > 0:
-            data = self.receiver.getData()
+            data = self.receiver.getString()
             self.receiver.nextPacket()
 
-            if len(data) >= 6 * 4:
-                msg = np.frombuffer(data, dtype=np.float32)
-                sender_id = int(msg[0])
-                pos = (msg[1], msg[2])
-                heading = msg[3]
-                value = np.array([msg[4], msg[5]])
+            try:
+                parts = data.split(",")
+                if len(parts) >= 6:
+                    msg = [float(p) for p in parts[:6]]
+                    sender_id = int(msg[0])
+                    pos = (msg[1], msg[2])
+                    heading = msg[3]
+                    value = np.array([msg[4], msg[5]])
+            except (ValueError, IndexError):
+                return
 
                 if sender_id == 0:  # Leader
                     self.leader_state = AgentState(
@@ -342,10 +386,9 @@ class FollowerController:
 def main():
     # Get agent ID from robot name or environment
     # In Webots, each robot instance has a unique name
-    # We need to create a temporary Robot to get the name
-    temp_robot = Robot()
-    robot_name = temp_robot.getName()
-    del temp_robot  # Clean up temporary instance
+    # Create a single Robot instance (Webots allows only one per controller)
+    robot = Robot()
+    robot_name = robot.getName()
 
     # Parse agent ID from name (e.g., "e-puck_follower_1" -> 1)
     agent_id = 1
@@ -356,6 +399,7 @@ def main():
             agent_id = 1
 
     controller = FollowerController(agent_id)
+    controller.robot = robot
     controller._init()
     controller.run()
 
