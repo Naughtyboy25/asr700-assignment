@@ -47,3 +47,6 @@ webots_project/resources/models/*.pth
 *.tmp
 *.temp
 *.bak
+
+# Report document (kept local, not in repo)
+report/*.docx
