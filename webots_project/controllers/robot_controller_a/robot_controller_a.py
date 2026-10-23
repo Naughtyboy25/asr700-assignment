@@ -11,12 +11,14 @@ This controller:
 - Uses only modules that live inside this controller folder.
 - Falls back to simple reactive driving if full planning is unavailable.
 - Always commands the motors every timestep.
+- Integrates Camera + LiDAR sensor fusion for obstacle avoidance and landmark detection.
 """
 
 import os
 import sys
 import math
 import time
+import numpy as np
 
 # ---------------------------------------------------------------------------
 # Make sibling modules importable no matter how Webots launches us
@@ -41,6 +43,14 @@ try:
     HAS_PLANNING = True
 except Exception as e:
     print(f"[WARN] Full planning stack unavailable ({e}). Using reactive mode.")
+
+# Try perception stack; degrade gracefully
+HAS_PERCEPTION = False
+try:
+    from perception import SensorFusion, SensorData, SensorConfig, EnvironmentConfig, RobotConfig
+    HAS_PERCEPTION = True
+except Exception as e:
+    print(f"[WARN] Perception stack unavailable ({e}). Using LiDAR-only mode.")
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -101,6 +111,22 @@ class RobotControllerA:
                 s.enable(self.timestep)
                 self.ps.append(s)
 
+        # Perception pipeline (camera + LiDAR fusion)
+        self.perception = None
+        self.fused_map = None
+        if HAS_PERCEPTION:
+            try:
+                sensor_config = SensorConfig()
+                env_config = EnvironmentConfig()
+                robot_config = RobotConfig()
+                self.perception = SensorFusion(sensor_config, env_config, robot_config=None)
+                print("[INFO] Sensor fusion initialized (Camera + LiDAR)")
+            except Exception as e:
+                print(f"[WARN] Failed to initialize perception: {e}")
+                self.perception = None
+        else:
+            print("[WARN] Perception module not available, using LiDAR-only mode")
+
         self.heading_pid = SimplePID(kp=2.0, kd=0.4)
         self.path = []
         self.path_idx = 0
@@ -112,8 +138,10 @@ class RobotControllerA:
         print(f"  GPS: {'yes' if self.gps else 'no'}")
         print(f"  IMU: {'yes' if self.imu else 'no'}")
         print(f"  LiDAR: {'yes' if self.lidar else 'no'}")
+        print(f"  Camera: {'yes' if self.camera else 'no'}")
         print(f"  Proximity sensors: {len(self.ps)}")
         print(f"  Full planning stack: {HAS_PLANNING}")
+        print(f"  Sensor fusion: {HAS_PERCEPTION}")
 
     # ------------------------------------------------------------------
     def get_pose(self):
@@ -190,6 +218,60 @@ class RobotControllerA:
             dt = self.timestep / 1000.0
             x, y, theta = self.get_pose()
 
+            # --- Perception: Camera + LiDAR Fusion ---
+            fused_obstacles = []
+            landmarks = []
+            if self.perception:
+                # Read camera image
+                camera_image = np.zeros((480, 640, 3), dtype=np.uint8)
+                if self.camera:
+                    img_data = self.camera.getImageArray()
+                    if img_data:
+                        camera_image = np.array(img_data, dtype=np.uint8)
+                    else:
+                        camera_image = np.zeros((480, 640, 3), dtype=np.uint8)
+                else:
+                    camera_image = np.zeros((480, 640, 3), dtype=np.uint8)
+
+                # Read LiDAR
+                lidar_ranges = np.array([])
+                if self.lidar:
+                    raw_ranges = self.lidar.getRangeImage()
+                    if raw_ranges:
+                        lidar_ranges = np.array(raw_ranges[::-1])  # Webots returns reversed
+                    else:
+                        lidar_ranges = np.array([])
+                else:
+                    lidar_ranges = np.array([])
+
+                # Get current pose
+                pose = (x, y, theta)
+
+                # Create sensor data and run fusion
+                sensor_data = SensorData(
+                    lidar_ranges=lidar_ranges,
+                    lidar_angles=np.array([]),  # Will be computed in SensorFusion
+                    camera_image=camera_image,
+                    timestamp=time.time(),
+                    robot_pose=pose
+                )
+
+                try:
+                    fused_map = self.perception.update(sensor_data)
+                    self.fused_map = fused_map
+                    # Get fused obstacles (LiDAR + camera)
+                    fused_obstacles = fused_map.obstacles_lidar + fused_map.obstacles_camera
+                    landmarks = fused_map.landmarks
+                    # Use landmarks for potential navigation (e.g., goal correction)
+                except Exception as e:
+                    print(f"[WARN] Sensor fusion failed: {e}")
+                    fused_obstacles = []
+                    landmarks = []
+            else:
+                # Perception not available, use LiDAR only
+                fused_obstacles = []
+                landmarks = []
+
             # Advance along path
             while self.path_idx < len(self.path) - 1:
                 tx, ty = self.path[self.path_idx]
@@ -229,21 +311,46 @@ class RobotControllerA:
             left_vel = max(-MAX_SPEED, min(MAX_SPEED, left_vel * scale * 30))
             right_vel = max(-MAX_SPEED, min(MAX_SPEED, right_vel * scale * 30))
 
-            # Proximity override
-            la, ra = self.proximity_avoidance()
-            left_vel *= la
-            right_vel *= ra
+            # --- Sensor Fusion Obstacle Avoidance ---
+            # Combine proximity sensors + LiDAR + camera obstacles
+            avoidance_factor_left = 1.0
+            avoidance_factor_right = 1.0
 
-            # LiDAR hard stop / reverse
+            # 1. Proximity sensors (IR) - existing behavior
+            la, ra = self.proximity_avoidance()
+            avoidance_factor_left *= la
+            avoidance_factor_right *= ra
+
+            # 2. LiDAR + Camera fused obstacles
+            for ox, oy, rad in fused_obstacles:
+                dist = math.hypot(ox - x, oy - y)
+                if dist < 0.4:  # Within 40cm
+                    # Compute bearing to obstacle
+                    bearing = math.atan2(oy - y, ox - x)
+                    rel_angle = (bearing - theta + math.pi) % (2 * math.pi) - math.pi
+                    if abs(rel_angle) < math.pi / 3:  # Within 60 degrees
+                        if rel_angle > 0:
+                            avoidance_factor_left *= 0.3
+                        else:
+                            avoidance_factor_right *= 0.3
+
+            # 3. LiDAR hard stop / reverse
             if self.lidar_min_range() < 0.12:
                 left_vel, right_vel = -0.4 * MAX_SPEED, 0.5 * MAX_SPEED
+
+            # Apply avoidance factors
+            left_vel *= avoidance_factor_left
+            right_vel *= avoidance_factor_right
 
             self.left_motor.setVelocity(left_vel)
             self.right_motor.setVelocity(right_vel)
 
             if self.step_count % 40 == 0:
+                num_obs = len(fused_obstacles) if 'fused_obstacles' in locals() else 0
+                num_lm = len(landmarks) if 'landmarks' in locals() else 0
                 print(f"t={self.step_count * dt:.1f}s  pos=({x:.2f},{y:.2f})  "
-                      f"goal_dist={dist_goal:.2f}  vL={left_vel:.2f} vR={right_vel:.2f}")
+                      f"goal_dist={dist_goal:.2f}  vL={left_vel:.2f} vR={right_vel:.2f}  "
+                      f"obs={num_obs} lm={num_lm}")
 
 
 def main():
