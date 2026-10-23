@@ -1,0 +1,15 @@
+Metric,Value
+Planned Path Length (m),13.36
+Actual Path Length (m),2.40
+Path Efficiency (%),556.8
+Time to Goal (s),20.1
+Max Tracking Error (m),0.084
+RMSE Tracking Error (m),0.027
+Mean Tracking Error (m),0.021
+Std Tracking Error (m),0.017
+Dijkstra Nodes Explored,31913
+A* Nodes Explored,14329
+Dijkstra Time (ms),1401.21
+A* Time (ms),1779.66
+Dijkstra Path Length (m),13.36
+A* Path Length (m),13.36

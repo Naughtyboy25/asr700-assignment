@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from typing import List, Tuple, Dict, Optional, Any
 from pathlib import Path
 import json
-from python_analysis.utils.config import MLConfig, SensorConfig
+from python_analysis.utils.config import MLConfig, SensorConfig, EnvironmentConfig
 from python_analysis.utils.helpers import normalize_angle
 
 
@@ -88,9 +88,11 @@ class NavigationCNN(nn.Module):
         x_lidar = self.relu(self.lidar_fc(x_lidar))
 
         # Camera branch
-        if camera.dim() == 4 and camera.shape[1] != self.config.camera_input_shape[2]:
-            # NHWC -> NCHW
-            camera = camera.permute(0, 3, 1, 2)
+        if camera.dim() == 4:
+            # Check if NHWC format (batch, H, W, C) by checking if last dim is 3 (RGB)
+            if camera.shape[-1] == 3 and camera.shape[1] != 3:
+                # NHWC -> NCHW
+                camera = camera.permute(0, 3, 1, 2)
         x_cam = self.relu(self.cam_conv1(camera))
         x_cam = self.relu(self.cam_conv2(x_cam))
         x_cam = self.cam_pool(x_cam)
@@ -341,7 +343,8 @@ def generate_training_data(num_samples: int = 10000,
     env_config = env_config or EnvironmentConfig()
 
     lidar_dim = config.lidar_input_dim
-    cam_shape = config.camera_input_shape
+    # Camera shape in HWC format (64, 64, 3) for data generation
+    cam_shape = (64, 64, 3)
 
     # Generate random robot states
     lidar_data = []
@@ -378,7 +381,7 @@ def generate_training_data(num_samples: int = 10000,
         # Normalize
         ranges = ranges / sensor_config.lidar_max_range
 
-        # Synthetic camera (random noise with some pattern)
+        # Synthetic camera (random noise with some pattern) - HWC format
         camera = np.random.rand(*cam_shape).astype(np.float32)
 
         lidar_data.append(ranges.astype(np.float32))
@@ -397,7 +400,8 @@ def create_dataloaders(lidar_data: np.ndarray,
 
     # Convert to tensors
     lidar_tensor = torch.FloatTensor(lidar_data)
-    camera_tensor = torch.FloatTensor(camera_data)
+    # Camera data is in HWC format (64, 64, 3), convert to CHW format (3, 64, 64)
+    camera_tensor = torch.FloatTensor(camera_data).permute(0, 3, 1, 2)
     target_tensor = torch.FloatTensor(targets)
 
     # Split

@@ -1,0 +1,4 @@
+coverage: 1.000
+nn_accuracy: 0.9286
+consensus_final_var_x: 0.000000
+consensus_final_var_y: 0.000000

@@ -7,49 +7,35 @@ WorldInfo {
   info [
     "ASR700 Component A - Single Robot Navigation"
   ]
-  basicTimeStep 32
   contactProperties [
     ContactProperties {
-      material1 "default"
-      material2 "default"
-      coulombFriction [
-        1
-      ]
       bounce 0.1
       softCFM 0.0001
     }
   ]
 }
-
 Viewpoint {
-  orientation -0.3574 0.3574 0.8629 1.7178
-  position 0 -9 9
+  orientation -0.35738821889154315 0.35738821889154315 0.8628715559079815 1.7178
+  position 0.00010014412529773849 -10.781158346384098 10.781041648894991
 }
-
 Background {
-  skyColor [0.5 0.7 0.9]
+  skyColor [
+    0.5 0.7 0.9
+  ]
 }
-
 DirectionalLight {
   ambientIntensity 0.6
   direction 0.3 -0.6 -1
-  intensity 1.0
   castShadows TRUE
 }
-
-# Clean arena floor + walls
 RectangleArena {
-  translation 0 0 0
   floorSize 10 10
   floorTileSize 1 1
-  wallHeight 0.4
   wallThickness 0.08
+  wallHeight 0.4
 }
-
-# Obstacles (boxes sitting on the floor)
 Solid {
   translation -2 0 0.25
-  name "obstacle_1"
   children [
     Shape {
       appearance PBRAppearance {
@@ -58,18 +44,17 @@ Solid {
         metalness 0
       }
       geometry Box {
-          size 1.2 2.5 0.5
-        }
+        size 1.2 2.5 0.5
+      }
     }
   ]
+  name "obstacle_1"
   boundingObject Box {
     size 1.2 2.5 0.5
   }
 }
-
 Solid {
   translation 2 -1.5 0.25
-  name "obstacle_2"
   children [
     Shape {
       appearance PBRAppearance {
@@ -78,18 +63,17 @@ Solid {
         metalness 0
       }
       geometry Box {
-          size 1.5 1.2 0.5
-        }
+        size 1.5 1.2 0.5
+      }
     }
   ]
+  name "obstacle_2"
   boundingObject Box {
     size 1.5 1.2 0.5
   }
 }
-
 Solid {
   translation 0 2 0.25
-  name "obstacle_3"
   children [
     Shape {
       appearance PBRAppearance {
@@ -98,18 +82,17 @@ Solid {
         metalness 0
       }
       geometry Box {
-          size 2.0 1.0 0.5
-        }
+        size 2 1 0.5
+      }
     }
   ]
+  name "obstacle_3"
   boundingObject Box {
-    size 2.0 1.0 0.5
+    size 2 1 0.5
   }
 }
-
 Solid {
   translation 2.5 2 0.25
-  name "obstacle_4"
   children [
     Shape {
       appearance PBRAppearance {
@@ -118,19 +101,17 @@ Solid {
         metalness 0
       }
       geometry Box {
-          size 1.0 1.5 0.5
-        }
+        size 1 1.5 0.5
+      }
     }
   ]
+  name "obstacle_4"
   boundingObject Box {
-    size 1.0 1.5 0.5
+    size 1 1.5 0.5
   }
 }
-
-# Coloured landmarks for camera detection
 Solid {
   translation -4.4 -4.4 0.15
-  name "landmark_red"
   children [
     Shape {
       appearance PBRAppearance {
@@ -139,20 +120,19 @@ Solid {
         metalness 0
       }
       geometry Cylinder {
-          height 0.3
-          radius 0.12
-        }
+        height 0.3
+        radius 0.12
+      }
     }
   ]
+  name "landmark_red"
   boundingObject Cylinder {
     height 0.3
     radius 0.12
   }
 }
-
 Solid {
   translation -4.4 4.4 0.15
-  name "landmark_green"
   children [
     Shape {
       appearance PBRAppearance {
@@ -161,20 +141,19 @@ Solid {
         metalness 0
       }
       geometry Cylinder {
-          height 0.3
-          radius 0.12
-        }
+        height 0.3
+        radius 0.12
+      }
     }
   ]
+  name "landmark_green"
   boundingObject Cylinder {
     height 0.3
     radius 0.12
   }
 }
-
 Solid {
   translation 4.4 -4.4 0.15
-  name "landmark_blue"
   children [
     Shape {
       appearance PBRAppearance {
@@ -183,20 +162,19 @@ Solid {
         metalness 0
       }
       geometry Cylinder {
-          height 0.3
-          radius 0.12
-        }
+        height 0.3
+        radius 0.12
+      }
     }
   ]
+  name "landmark_blue"
   boundingObject Cylinder {
     height 0.3
     radius 0.12
   }
 }
-
 Solid {
   translation 4.4 4.4 0.15
-  name "landmark_yellow"
   children [
     Shape {
       appearance PBRAppearance {
@@ -205,61 +183,61 @@ Solid {
         metalness 0
       }
       geometry Cylinder {
-          height 0.3
-          radius 0.12
-        }
+        height 0.3
+        radius 0.12
+      }
     }
   ]
+  name "landmark_yellow"
   boundingObject Cylinder {
     height 0.3
     radius 0.12
   }
 }
-
-# Goal marker (visual only)
 Solid {
   translation 3.5 3.5 0.01
-  name "goal_marker"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.1 0.9 0.3
+        transparency 0.4
         roughness 1
         metalness 0
-        transparency 0.4
       }
       geometry Cylinder {
-          height 0.02
-          radius 0.25
-        }
+        height 0.02
+        radius 0.25
+      }
     }
   ]
+  name "goal_marker"
 }
-
-# E-puck robot – start near bottom-left of arena
 E-puck {
-  translation -3.5 -3.5 0
-  rotation 0 0 1 0.785
-  name "e-puck"
+  hidden position_0_0 49.07107845458368
+  hidden position_0_1 280.2068382246355
+  hidden linearVelocity_0 0.006144932478973741 0.001262246271383984 -9.08468093995138e-08
+  hidden angularVelocity_0 3.9399540017670677e-05 -0.00012584340022577979 1.9821310177049043
+  hidden rotation_1 0 -1 0 1.1944040028530145
+  hidden linearVelocity_1 -0.04430150377875394 -0.011296612599209468 -2.314167883986365e-08
+  hidden angularVelocity_1 0.6135856320945758 -2.4370322504327526 2.008002427591046
+  hidden rotation_2 0 0.9999999999999999 0 3.746684708733671
+  hidden linearVelocity_2 0.05663030565737933 0.01372610920852722 -2.432907986181783e-08
+  hidden angularVelocity_2 -0.7607960227994872 3.0473125318266976 2.024386565081891
+  translation -1.3486738966646628 -1.3459773666510264 -8.284804650520762e-05
+  rotation -0.002404174569101192 -0.0008401374344760067 -0.9999967570516078 -0.2827312575695098
   controller "robot_controller_a"
-  supervisor FALSE
   turretSlot [
     GPS {
-      name "gps"
     }
     InertialUnit {
-      name "inertial unit"
     }
     Lidar {
       translation 0 0 0.04
-      name "lidar"
       horizontalResolution 180
       fieldOfView 6.28318
       numberOfLayers 1
       minRange 0.05
       maxRange 2.5
-      type "fixed"
     }
   ]
 }
-

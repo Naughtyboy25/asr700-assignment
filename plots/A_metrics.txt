@@ -1,0 +1,8 @@
+planned_m: 13.685
+actual_m: 13.104
+time_s: 22.25
+mean_heading_err: 0.0863
+dijkstra_nodes: 2023
+astar_nodes: 1168
+dijkstra_ms: 12.82
+astar_ms: 14.37

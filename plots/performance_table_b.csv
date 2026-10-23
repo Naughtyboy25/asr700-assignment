@@ -1,0 +1,18 @@
+Metric,Value
+Swarm Size,6
+Communication Range (m),2.0
+Consensus Convergence Time (iterations),19
+Consensus Final Error,0.000001
+PSO Best Coverage (cells),5817
+PSO Coverage Ratio,16.63%
+ACO Best Coverage (cells),614
+ACO Coverage Ratio,45.41%
+NN Model Parameters,"333,570"
+NN Test MSE,0.430447
+NN Test MAE,0.446529
+Classification Accuracy,0.0650
+Macro F1 Score,0.0244
+Centralized Success Rate,100.00%
+Distributed Success Rate,100.00%
+Centralized Avg Coverage,12.62%
+Distributed Avg Coverage,12.04%

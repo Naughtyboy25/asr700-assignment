@@ -1,20 +1,15 @@
-# UV
-.venv/
-uv.lock
-
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .pytest_cache/
+.ipynb_checkpoints/
+.venv/
 .coverage
 htmlcov/
 .mypy_cache/
 .ruff_cache/
-
-# Jupyter
-.ipynb_checkpoints/
 
 # Webots
 webots_project/controllers/*/build/
@@ -35,34 +30,12 @@ Thumbs.db
 # Data (large files)
 data/sensor_logs/*.npy
 data/trajectories/*.npy
-data/ml_datasets/*.pt
 data/ml_datasets/*.npy
+data/ml_datasets/*.pt
 
 # Model checkpoints
 webots_project/resources/models/*.pth
-webots_project/resources/models/*.pt
-*.onnx
-
-# Reports
-report/*.aux
-report/*.log
-report/*.out
-report/*.toc
-report/*.bbl
-report/*.blg
-report/*.fdb_latexmk
-report/*.fls
-report/*.synctex.gz
-
-# Distribution
-dist/
-build/
-*.egg-info/
-
-# Temporary
-*.tmp
-*.temp
-*.bak
+*.pth
 
 # Large outputs
 *.mp4
@@ -70,4 +43,7 @@ build/
 *.mov
 *.zip
 
-Project_PLAN.md
+# Temporary
+*.tmp
+*.temp
+*.bak

@@ -1,91 +1,86 @@
-ASR700 Assignment - Autonomous Systems and Robotics 700
-=======================================================
+Autonomous Systems and Robotics 700
+Intelligent Autonomous Robotic Systems Project
+Richfield Graduate Institute of Technology
 
+================================================================================
+CONTENTS
+================================================================================
+webots_project/          Webots worlds + Python controllers (Component A & B)
+python_simulations/      Fully offline reproducible simulations (Matplotlib)
+python_analysis/         Analysis notebooks (component_a_analysis, component_b_analysis)
+plots/                   All generated figures and metric files
+tests/                   pytest suite (python -m pytest tests/)
+report/ASR700_Report.docx Editable Word report (export to PDF for submission)
+README.txt               This file
 
+================================================================================
 SOFTWARE VERSIONS
------------------
-Webots: 2025a (R2025a)
-Python: 3.10.x (recommended 3.10 or 3.11)
-UV: 0.4.x or later
+================================================================================
+Webots: R2025a (or R2023b+)
+Python: 3.10 – 3.12
+Key packages: numpy, matplotlib, torch
 
-PYTHON DEPENDENCIES
--------------------
-See requirements.txt (generated via: uv pip freeze)
-Key packages:
-- numpy>=1.26.0
-- scipy>=1.11.0
-- matplotlib>=3.8.0
-- seaborn>=0.13.0
-- plotly>=5.18.0
-- opencv-python>=4.8.0
-- torch>=2.1.0 (for ML component)
-- pillow>=10.0.0
-- pyyaml>=6.0
-- tqdm>=4.66.0
+Install offline dependencies:
+  pip install numpy matplotlib torch
 
-INSTALLATION
-------------
-1. Install Webots 2025a from https://cyberbotics.com/
-2. Install UV: pip install uv (or via brew/choco)
-3. Clone repository:
-   git clone https://github.com/<username>/asr700-assignment.git
-   cd asr700-assignment
-4. Install Python dependencies:
-   uv sync --all-extras
-   # Or: uv pip install -e .[ml,dev]
+================================================================================
+HOW TO RUN – OFFLINE PYTHON (recommended for marking reproducibility)
+================================================================================
+Component A:
+  cd python_simulations/component_a
+  python3 run_component_a.py
 
-RUNNING COMPONENT A (Single Robot Navigation)
----------------------------------------------
-1. Open Webots 2025a
-2. File > Open World > webots_project/worlds/component_a.wbt
-3. Build controller: Select robot_controller_a > Build
-4. Press Play to run simulation
-5. For analysis plots:
-   cd python_analysis
-   uv run jupyter notebook component_a_analysis.ipynb
-   Run all cells to generate visualizations
+Component B:
+  cd python_simulations/component_b
+  python3 run_component_b.py
 
-RUNNING COMPONENT B (Multi-Agent Swarm)
----------------------------------------
-1. Open Webots 2025a
-2. File > Open World > webots_project/worlds/component_b.wbt
-3. Build all controllers: swarm_agents > Build
-4. Press Play to run simulation
-5. For analysis plots:
-   cd python_analysis
-   uv run jupyter notebook component_b_analysis.ipynb
-   Run all cells to generate visualizations
+Plots and metrics are written to the plots/ directory.
 
-TRAINING NEURAL NETWORK (Component B ML)
-----------------------------------------
-cd python_analysis/training
-uv run python train_nn.py
-# Trained model saved to webots_project/resources/models/
+================================================================================
+HOW TO RUN – WEBOTS
+================================================================================
+1. Install Webots from https://cyberbotics.com
+2. File → Open World → webots_project/worlds/component_a.wbt
+   (or component_b.wbt for the swarm)
+3. Press Play. Controllers are self-contained and do not require external packages.
+4. Open the console to see pose / goal-distance logging.
 
+Controller folders:
+  robot_controller_a/   – single-robot perception + planning + PID tracking
+  swarm_agents/         – leader/follower swarm (role via controllerArgs)
+
+================================================================================
 EXPECTED RUNTIME
-----------------
-Component A simulation: ~60-120 seconds
-Component B simulation: ~120-180 seconds
-Neural network training: ~10-30 minutes (CPU), ~2-5 minutes (GPU)
-Analysis notebooks: ~30-60 seconds each
+================================================================================
+Offline Component A: < 15 s
+Offline Component B: < 30 s (includes neural-net training)
+Webots Component A:  ~60–120 s of simulation time
+Webots Component B:  ~120–180 s of simulation time
 
-HARDWARE REQUIREMENTS
----------------------
-- OS: Windows 11 (tested), Linux, or macOS
-- RAM: 8 GB minimum, 16 GB recommended
-- CPU: 4+ cores recommended
-- GPU: Optional but recommended for ML training (CUDA compatible)
-- Disk: 2 GB free space
-- Display: Required for Webots GUI (headless mode available for CI)
+================================================================================
+HARDWARE
+================================================================================
+Any modern CPU, ~2 GB free RAM. No GPU required for the offline demos.
+Display required only for the Webots GUI.
 
-TROUBLESHOOTING
----------------
-- Webots controller build fails: Ensure Python path in Webots preferences matches uv environment
-- Import errors: Run 'uv sync' to ensure all dependencies installed
-- OpenCV errors: Ensure opencv-python-headless not used (need GUI for Webots)
-- Memory issues: Reduce grid resolution or swarm size
+================================================================================
+ASSIGNMENT MAPPING
+================================================================================
+Component A (50)
+  1. Sensor simulation & fusion     – run_component_a.py + Webots LiDAR/camera
+  2. Dijkstra & A* + comparison     – run_component_a.py (plots A2)
+  3. PID design & tuning            – run_component_a.py (plots A3)
+  4. Integration & evaluation       – trajectory + metrics + ethics in report
 
-CONTACT
--------
-[Student Email]
-GitHub: https://github.com/<username>/asr700-assignment
+Component B (50)
+  1. Multi-agent Webots setup       – component_b.wbt (>=3 agents)
+  2. Consensus + swarm intelligence – run_component_b.py (B1, B2)
+  3. ML navigation policy           – NavNet training + confusion matrix (B3)
+  4. Ethics / SA context            – Report section 4 (20 marks)
+
+================================================================================
+DECLARATION OF ORIGINALITY
+================================================================================
+This submission is the student's own work. Sources used for the literature
+review and ethical discussion are cited in Harvard style inside the PDF report.
+Simulation code and analysis scripts were developed for this assignment.

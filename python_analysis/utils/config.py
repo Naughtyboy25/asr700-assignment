@@ -82,7 +82,7 @@ class MLConfig:
     """Machine learning configuration."""
     input_channels: int = 3  # LiDAR (1) + Camera RGB (3) = 4, but we'll use processed
     lidar_input_dim: int = 360  # LiDAR scans per timestep
-    camera_input_shape: Tuple[int, int, int] = (64, 64, 3)  # Downsampled camera
+    camera_input_shape: Tuple[int, int, int] = (3, 64, 64)  # Downsampled camera (C, H, W)
     hidden_dim: int = 128
     output_dim: int = 2  # Linear velocity, Angular velocity
     learning_rate: float = 1e-3

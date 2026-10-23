@@ -208,11 +208,10 @@ class LeaderController:
             return
 
         # Simple message: agent_id, x, y, theta, consensus_value_x, consensus_value_y
-        msg = np.array([self.agent_id,
-                        self.position[0], self.position[1], self.heading,
-                        self.consensus_value[0], self.consensus_value[1]],
-                       dtype=np.float32)
-        self.emitter.send(msg.tobytes())
+        msg = [self.agent_id,
+               self.position[0], self.position[1], self.heading,
+               self.consensus_value[0], self.consensus_value[1]]
+        self.emitter.send(",".join(f"{v:.6f}" for v in msg))
 
     def _receive_messages(self):
         """Receive messages from followers."""
@@ -220,15 +219,19 @@ class LeaderController:
             return
 
         while self.receiver.getQueueLength() > 0:
-            data = self.receiver.getData()
+            data = self.receiver.getString()
             self.receiver.nextPacket()
 
-            if len(data) >= 6 * 4:  # 6 floats
-                msg = np.frombuffer(data, dtype=np.float32)
-                follower_id = int(msg[0])
-                pos = (msg[1], msg[2])
-                heading = msg[3]
-                value = np.array([msg[4], msg[5]])
+            try:
+                parts = data.split(",")
+                if len(parts) >= 6:
+                    msg = [float(p) for p in parts[:6]]
+                    follower_id = int(msg[0])
+                    pos = (msg[1], msg[2])
+                    heading = msg[3]
+                    value = np.array([msg[4], msg[5]])
+            except (ValueError, IndexError):
+                return
 
                 # Update follower state
                 self.follower_states[follower_id] = AgentState(
@@ -309,6 +312,10 @@ class LeaderController:
         # Extract waypoints
         waypoints = result.best_position.reshape(-1, 2)
         self.coverage_targets = [tuple(wp) for wp in waypoints]
+
+        # Use a real coverage waypoint as the leader's target
+        if self.coverage_targets:
+            self.consensus_value = np.asarray(self.coverage_targets[0], dtype=float)
 
         print(f"Leader: Planned {len(self.coverage_targets)} coverage targets")
 

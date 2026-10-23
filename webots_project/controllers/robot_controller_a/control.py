@@ -93,7 +93,7 @@ class DualPIDController:
             self.linear_pid.kd = linear_gains.kd
         if angular_gains:
             self.angular_pid.kp = angular_gains.kp
-            self.angular_pid.ki = angular_gains.kd
+            self.angular_pid.ki = angular_gains.ki
             self.angular_pid.kd = angular_gains.kd
 
     def compute(self, state: RobotState, target: Tuple[float, float],

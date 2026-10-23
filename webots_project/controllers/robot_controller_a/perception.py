@@ -84,13 +84,8 @@ class LiDARProcessor:
         self.config = config or SensorConfig()
         self.env_config = env_config or EnvironmentConfig()
 
-        # Precompute angles
-        num_beams = int(self.config.lidar_fov / self.config.lidar_resolution)
-        self.angles = np.linspace(
-            -np.deg2rad(self.config.lidar_fov / 2),
-            np.deg2rad(self.config.lidar_fov / 2),
-            num_beams
-        )
+        # Angles are computed dynamically per scan to match actual beam count
+        self.angles = None
 
     def process_scan(self, ranges: np.ndarray) -> np.ndarray:
         """
@@ -125,10 +120,18 @@ class LiDARProcessor:
         """
         rx, ry, rtheta = robot_pose
 
+        # Compute angles to match actual number of beams in ranges
+        n = len(ranges)
+        angles = np.linspace(
+            -np.deg2rad(self.config.lidar_fov / 2),
+            np.deg2rad(self.config.lidar_fov / 2),
+            n
+        )
+
         # Filter valid ranges
         valid = (ranges > self.config.lidar_min_range) & (ranges < self.config.lidar_max_range)
         valid_ranges = ranges[valid]
-        valid_angles = self.angles[valid]
+        valid_angles = angles[valid]
 
         if len(valid_ranges) == 0:
             return np.empty((0, 2))
@@ -153,8 +156,14 @@ class LiDARProcessor:
         Returns:
             (hits, misses) lists of (row, col) grid cells
         """
+        n = len(ranges)
+        angles = np.linspace(
+            -np.deg2rad(self.config.lidar_fov / 2),
+            np.deg2rad(self.config.lidar_fov / 2),
+            n
+        )
         return lidar_to_grid_cells(
-            ranges, self.angles,
+            ranges, angles,
             robot_pose[:2], robot_pose[2],
             grid_resolution, grid_shape,
             grid_origin, self.config.lidar_max_range
